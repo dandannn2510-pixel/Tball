@@ -17,72 +17,61 @@ const MIME_TYPES = {
     '.ico': 'image/x-icon'
 };
 
+function readBody(req) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on('data', c => chunks.push(c));
+        req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        req.on('error', reject);
+    });
+}
+
+async function proxyToGas(req, res) {
+    const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?') + 1) : '';
+    const targetUrl = `${GAS_URL}${query ? '?' + query : ''}`;
+
+    try {
+        const options = { method: req.method === 'POST' ? 'POST' : 'GET', redirect: 'follow' };
+        if (options.method === 'POST') {
+            options.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            options.body = await readBody(req);
+        }
+
+        const gasRes = await fetch(targetUrl, options);
+        const text = await gasRes.text();
+        console.log(`[API] ${options.method} ${query.slice(0, 80)} -> ${gasRes.status}`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8', 'Cache-Control': 'no-store' });
+        res.end(text);
+    } catch (err) {
+        console.error('[API] Proxy error:', err.message);
+        res.writeHead(502, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify({ status: 'error', message: 'Proxy ติดต่อ Google Apps Script ไม่ได้: ' + err.message }));
+    }
+}
+
 const server = http.createServer(async (req, res) => {
-    // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
-        res.writeHead(200);
+        res.writeHead(204);
         res.end();
         return;
     }
 
-    // Handle /api proxy to bypass CORS
-    if (req.url.startsWith('/api')) {
-        try {
-            const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?') + 1) : '';
-            const targetUrl = `${GAS_URL}${query ? '?' + query : ''}`;
+    const pathname = req.url.split('?')[0];
 
-            let bodyChunks = [];
-            req.on('data', chunk => bodyChunks.push(chunk));
-            req.on('end', async () => {
-                try {
-                    const bodyBuffer = Buffer.concat(bodyChunks);
-                    let gasResponse;
-
-                    if (req.method === 'POST') {
-                        gasResponse = await fetch(targetUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: bodyBuffer.toString('utf8'),
-                            redirect: 'follow'
-                        });
-                    } else {
-                        gasResponse = await fetch(targetUrl, {
-                            method: 'GET',
-                            redirect: 'follow'
-                        });
-                    }
-
-                    const responseText = await gasResponse.text();
-                    res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
-                    res.end(responseText);
-                } catch (proxyErr) {
-                    console.error('Proxy Fetch Error:', proxyErr);
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ status: 'error', message: proxyErr.message }));
-                }
-            });
-            return;
-        } catch (err) {
-            console.error('API Error:', err);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'error', message: err.message }));
-            return;
-        }
+    // /api -> proxy ไป Google Apps Script
+    if (pathname === '/api' || pathname.startsWith('/api/')) {
+        await proxyToGas(req, res);
+        return;
     }
 
-    // Static file serving
-    let safeUrl = req.url.split('?')[0];
-    if (safeUrl === '/' || safeUrl === '') {
-        safeUrl = '/index.html';
-    }
-
-    const filePath = path.join(__dirname, safeUrl);
+    // Static files
+    const safePath = pathname === '/' ? '/index.html' : decodeURIComponent(pathname);
+    const filePath = path.join(__dirname, safePath);
 
     if (!filePath.startsWith(__dirname)) {
         res.writeHead(403, { 'Content-Type': 'text/plain' });
@@ -92,27 +81,26 @@ const server = http.createServer(async (req, res) => {
 
     fs.readFile(filePath, (err, content) => {
         if (err) {
-            if (err.code === 'ENOENT') {
-                fs.readFile(path.join(__dirname, 'index.html'), (spaErr, spaContent) => {
-                    if (spaErr) {
-                        res.writeHead(404, { 'Content-Type': 'text/plain' });
-                        res.end('404 Not Found');
-                    } else {
-                        res.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' });
-                        res.end(spaContent);
-                    }
-                });
-            } else {
-                res.writeHead(500);
-                res.end(`Server Error: ${err.code}`);
-            }
-        } else {
-            const ext = path.extname(filePath).toLowerCase();
-            const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content);
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=UTF-8' });
+            res.end('404 Not Found');
+            return;
         }
+        const ext = path.extname(filePath).toLowerCase();
+        res.writeHead(200, {
+            'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+            'Cache-Control': 'no-cache'
+        });
+        res.end(content);
     });
+});
+
+server.on('error', err => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`\n❌ Port ${PORT} ถูกใช้งานอยู่ (อาจมี npm run dev ตัวเก่ารันค้างอยู่)`);
+        console.error(`   ปิด Terminal ตัวเก่า หรือกด Ctrl + C ในหน้าต่างนั้นก่อน แล้วรันใหม่\n`);
+        process.exit(1);
+    }
+    throw err;
 });
 
 server.listen(PORT, () => {
