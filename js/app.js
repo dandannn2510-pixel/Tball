@@ -726,8 +726,8 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: '#0F172A',
-                    titleFont: { family: 'Space Grotesk', size: 11 },
-                    bodyFont: { family: 'Prompt', size: 12 },
+                    titleFont: { family: 'Kanit', size: 11 },
+                    bodyFont: { family: 'Bai Jamjuree', size: 12 },
                     padding: 10,
                     cornerRadius: 6
                 }
@@ -735,11 +735,11 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
             scales: {
                 y: {
                     grid: { color: '#E2E8F0' },
-                    ticks: { font: { family: 'Space Grotesk', size: 11 }, color: '#64748B' }
+                    ticks: { font: { family: 'Kanit', size: 11 }, color: '#64748B' }
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { font: { family: 'Space Grotesk', size: 10 }, color: '#94A3B8', maxTicksLimit: 12 }
+                    ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8', maxTicksLimit: 12 }
                 }
             }
         }
