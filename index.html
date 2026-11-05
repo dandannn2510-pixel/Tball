@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบตรวจวัดและควบคุมคุณภาพน้ำ</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%230284C7'/%3E%3Cpath d='M24 11C24 11 14 23.5 14 31C14 36.5 18.5 41 24 41C29.5 41 34 36.5 34 31C34 23.5 24 11 24 11Z' fill='white'/%3E%3Cpath d='M18 31C20 28.5 22 28.5 24 31C26 33.5 28 33.5 30 31' stroke='%230284C7' stroke-width='2.2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+    <title>AQUAFLOW — ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23071324' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M32 12 C32 12 18 29 18 39 C18 46.7 24.3 53 32 53 C39.7 53 46 46.7 46 39 C46 29 32 12 32 12 Z' fill='url(%23g)'/%3E%3Cpath d='M22 39 Q27 34 32 39 T42 39' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,8 +16,9 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"Anuphan"', '"IBM Plex Sans Thai"', '"Inter"', 'sans-serif'],
-                        num: ['"Inter"', '"Anuphan"', 'sans-serif'],
+                        sans: ['"IBM Plex Sans Thai"', '"Anuphan"', 'sans-serif'],
+                        display: ['"Anuphan"', '"IBM Plex Sans Thai"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
                     }
                 }
             }
@@ -25,401 +26,604 @@
     </script>
     <style>
         body {
-            font-family: 'Anuphan', 'IBM Plex Sans Thai', sans-serif;
-            background-color: #F8FAFC;
+            font-family: 'IBM Plex Sans Thai', sans-serif;
+            background-color: #F1F5F9;
             color: #0F172A;
             -webkit-font-smoothing: antialiased;
         }
-        .tabular-nums {
-            font-family: 'Inter', 'Anuphan', sans-serif;
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
             font-variant-numeric: tabular-nums;
         }
+        /* Left Showcase Ocean Canvas */
+        .hydro-showcase-bg {
+            background: radial-gradient(circle at 20% 20%, #0E3354 0%, #071526 60%, #050E1A 100%);
+            position: relative;
+        }
+        .hydro-showcase-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+        }
         .led-dot {
-            width: 7px;
-            height: 7px;
+            width: 8px;
+            height: 8px;
             border-radius: 9999px;
             display: inline-block;
         }
-        .led-online { background-color: #10B981; }
-        .led-standby { background-color: #CBD5E1; }
-        .led-error { background-color: #EF4444; }
+        .led-online {
+            background-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .led-standby {
+            background-color: #94A3B8;
+        }
+        .led-error {
+            background-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        .gauge-arc {
+            transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col selection:bg-sky-700 selection:text-white">
 
-    <!-- Toast Notification -->
-    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-xs w-full"></div>
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
 
     <!-- ===================================================================== -->
-    <!-- 1. LOGIN PAGE (CLEAN, MINIMAL, CALM)                                  -->
+    <!-- 1. SPLIT-SCREEN LOGIN PORTAL (SPACIOUS, BALANCED, ELEGANT)            -->
     <!-- ===================================================================== -->
-    <div id="authScreen" class="min-h-screen flex flex-col justify-between bg-[#F8FAFC] px-4 py-6 sm:px-8">
+    <div id="authScreen" class="min-h-screen flex flex-col lg:flex-row bg-white">
 
-        <!-- Minimal Top Header -->
-        <header class="max-w-5xl w-full mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <svg class="w-9 h-9 shrink-0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="48" height="48" rx="11" fill="#0284C7"/>
-                    <path d="M24 11C24 11 14 23.5 14 31C14 36.5 18.5 41 24 41C29.5 41 34 36.5 34 31C34 23.5 24 11 24 11Z" fill="white"/>
-                    <path d="M18.5 31C20.3 28.8 22.2 28.8 24 31C25.8 33.2 27.7 33.2 29.5 31" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- LEFT SHOWCASE: Spacious Brand & Parameter Highlights (55% width) -->
+        <div class="lg:w-[55%] xl:w-[58%] hydro-showcase-bg text-white p-8 sm:p-12 lg:p-16 xl:p-20 flex flex-col justify-between relative overflow-hidden">
+
+            <!-- Ambient Subtle Glow -->
+            <div class="absolute -bottom-36 -left-36 w-[420px] h-[420px] rounded-full bg-sky-500/10 blur-3xl pointer-events-none"></div>
+            <div class="absolute top-16 right-10 w-80 h-80 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+
+            <!-- Decorative Subtle Background Wave SVG -->
+            <svg class="absolute bottom-0 left-0 right-0 w-full h-48 opacity-10 pointer-events-none" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                <path fill="#38BDF8" d="M0,192L60,186.7C120,181,240,171,360,181.3C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L0,320Z"></path>
+            </svg>
+
+            <!-- Top: Custom Vector Hydro-Crest Emblem Logo -->
+            <div class="relative z-10 flex items-center gap-4">
+                <svg class="w-12 h-12 shrink-0 drop-shadow-md" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="crestGrad" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#38BDF8"/>
+                            <stop offset="55%" stop-color="#0284C7"/>
+                            <stop offset="100%" stop-color="#0D9488"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="40" cy="40" r="37" fill="#071527" stroke="url(#crestGrad)" stroke-width="2.2"/>
+                    <polygon points="40,12 64,26 64,54 40,68 16,54 16,26" fill="#0B213B" stroke="#0284C7" stroke-width="1.2"/>
+                    <path d="M40 18 C40 18 24 35 24 46 C24 54.8 31.2 62 40 62 C48.8 62 56 54.8 56 46 C56 35 40 18 40 18 Z" fill="url(#crestGrad)"/>
+                    <path d="M29 46 Q34.5 39 40 46 T51 46" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="40" cy="31" r="2.5" fill="#FDE68A"/>
                 </svg>
-                <span class="font-semibold text-slate-900 text-base tracking-tight">ระบบตรวจวัดและควบคุมคุณภาพน้ำ</span>
+                <div>
+                    <div class="font-display font-bold text-lg tracking-wider text-white">AQUAFLOW</div>
+                    <p class="text-xs text-sky-300/80">Smart Water Quality Monitoring &amp; Control</p>
+                </div>
             </div>
 
-            <div id="apiStatus" class="text-xs text-slate-500 flex items-center gap-2">
-                <span class="led-dot led-standby"></span>
-                <span>กำลังตรวจสอบการเชื่อมต่อ...</span>
-            </div>
-        </header>
-
-        <!-- Clean Center Login Box -->
-        <main class="my-auto py-8">
-            <div class="max-w-[390px] w-full mx-auto bg-white rounded-xl border border-slate-200/90 p-7 sm:p-8 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-
-                <div class="mb-6">
-                    <h1 id="authTitle" class="text-xl font-bold text-slate-900">เข้าสู่ระบบ</h1>
-                    <p class="text-xs text-slate-500 mt-1">ลงชื่อเข้าใช้เพื่อดูค่าคุณภาพน้ำและควบคุมอุปกรณ์</p>
+            <!-- Middle: Spacious Hero Typography + 3 Clean Parameter Cards -->
+            <div class="relative z-10 my-12 lg:my-auto max-w-xl space-y-10">
+                <div class="space-y-4">
+                    <div class="inline-flex items-center gap-2.5 text-xs font-mono-num uppercase tracking-widest text-sky-400">
+                        <span class="w-6 h-[1.5px] bg-sky-400"></span>
+                        <span>WATER QUALITY TELEMETRY SYSTEM</span>
+                    </div>
+                    <h1 class="font-display text-2xl sm:text-3xl xl:text-4xl font-bold text-white leading-snug">
+                        ระบบตรวจวัดคุณภาพน้ำ<br>และควบคุมการบำบัดอัตโนมัติ
+                    </h1>
+                    <p class="text-sm sm:text-base text-slate-300/90 leading-relaxed font-light">
+                        ติดตามค่าพารามิเตอร์หลักของน้ำแบบเรียลไทม์ผ่านโครงข่ายเซนเซอร์ พร้อมระบบควบคุมการทำงานของมอเตอร์และปั๊มบำบัดผ่านคลาวด์
+                    </p>
                 </div>
 
-                <!-- Segmented Switcher -->
-                <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-lg mb-6">
+                <!-- 3 Airy Glass Parameter Cards (Replaces the crowded diagram) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white/[0.05] border border-white/10 rounded-xl p-4 backdrop-blur-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-mono-num text-orange-400 font-semibold">TEMP</span>
+                            <i data-lucide="thermometer" class="w-4 h-4 text-orange-400"></i>
+                        </div>
+                        <div class="text-sm font-semibold text-white">อุณหภูมิน้ำ</div>
+                        <div class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ &lt; 35.0 °C</div>
+                    </div>
+
+                    <div class="bg-white/[0.05] border border-white/10 rounded-xl p-4 backdrop-blur-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-mono-num text-sky-400 font-semibold">pH LEVEL</span>
+                            <i data-lucide="droplets" class="w-4 h-4 text-sky-400"></i>
+                        </div>
+                        <div class="text-sm font-semibold text-white">ความเป็นกรด-ด่าง</div>
+                        <div class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ 5.5 – 7.5 pH</div>
+                    </div>
+
+                    <div class="bg-white/[0.05] border border-white/10 rounded-xl p-4 backdrop-blur-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-mono-num text-emerald-400 font-semibold">EC LEVEL</span>
+                            <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                        </div>
+                        <div class="text-sm font-semibold text-white">ค่าการนำไฟฟ้า</div>
+                        <div class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ &le; 2.0 mS/cm</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Clean Minimal Caption -->
+            <div class="relative z-10 flex items-center justify-between text-xs text-slate-400 pt-4 border-t border-white/10">
+                <span>โครงงานระบบตรวจวัดและบำบัดคุณภาพน้ำอัจฉริยะ</span>
+                <span class="font-mono-num text-[11px] text-slate-500">ESP32 • CLOUD TELEMETRY</span>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Clean Sign-In Surface (45% width) -->
+        <div class="lg:w-[45%] xl:w-[42%] bg-white flex flex-col justify-between p-8 sm:p-12 lg:p-16">
+
+            <!-- Top Status -->
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-mono-num uppercase tracking-wider text-slate-400">OPERATOR PORTAL</span>
+                <div id="apiStatus" class="text-xs text-slate-500 flex items-center gap-2">
+                    <span class="led-dot led-standby"></span>
+                    <span>กำลังตรวจสอบฐานข้อมูล...</span>
+                </div>
+            </div>
+
+            <!-- Center Login Form -->
+            <div class="my-10 lg:my-auto max-w-sm w-full mx-auto">
+
+                <div class="mb-8">
+                    <h2 id="authTitle" class="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+                        ลงชื่อเข้าใช้งานระบบ
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-2">
+                        ระบุชื่อผู้ใช้งานเพื่อเข้าสู่หน้ามอนิเตอร์และแผงควบคุมอุปกรณ์
+                    </p>
+                </div>
+
+                <!-- Underline Tabs -->
+                <div class="flex border-b border-slate-200 mb-7">
                     <button type="button" id="tabLogin" onclick="switchAuthTab('login')"
-                        class="py-2 text-xs font-semibold rounded-md transition-all bg-white text-slate-900 shadow-sm">
+                        class="pb-3 pr-6 text-sm font-bold border-b-2 border-slate-900 text-slate-900 transition-all">
                         เข้าสู่ระบบ
                     </button>
                     <button type="button" id="tabRegister" onclick="switchAuthTab('register')"
-                        class="py-2 text-xs font-medium rounded-md transition-all text-slate-500 hover:text-slate-800">
-                        สมัครสมาชิก
+                        class="pb-3 px-6 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all">
+                        สมัครสมาชิกใหม่
                     </button>
                 </div>
 
-                <div id="authMsgBox" class="hidden mb-4 p-3 rounded-lg text-xs border transition"></div>
+                <div id="authMsgBox" class="hidden mb-5 p-3.5 rounded-lg text-xs border transition"></div>
 
-                <form onsubmit="handleAuth(event)" class="space-y-4">
+                <form onsubmit="handleAuth(event)" class="space-y-5">
                     <div>
-                        <label id="authUsernameLabel" class="block text-xs font-medium text-slate-700 mb-1.5">
-                            ชื่อผู้ใช้งาน
+                        <label id="authUsernameLabel" class="block text-xs font-semibold text-slate-700 mb-2">
+                            ชื่อผู้ใช้งาน (Username)
                         </label>
                         <input type="text" id="authUsername" required autocomplete="username"
-                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 text-sm transition"
-                            placeholder="กรอกชื่อผู้ใช้งาน">
+                            class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 text-sm transition"
+                            placeholder="กรอกชื่อผู้ใช้งานของคุณ">
                     </div>
 
                     <button type="submit" id="authSubmitBtn"
-                        class="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition">
-                        <span id="authSubmitText">เข้าสู่ระบบ</span>
+                        class="w-full py-3.5 px-5 rounded-lg bg-[#071526] hover:bg-sky-900 text-white text-sm font-semibold transition flex items-center justify-between group shadow-sm">
+                        <span id="authSubmitText">เข้าสู่แผงควบคุมระบบ</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-sky-400 group-hover:translate-x-1 transition-transform"></i>
                     </button>
                 </form>
 
-                <div class="mt-6 pt-5 border-t border-slate-100 text-center">
+                <!-- Evaluator Quick Access -->
+                <div class="mt-8 pt-6 border-t border-slate-100">
                     <button type="button" onclick="quickGuestLogin()"
-                        class="text-xs font-medium text-slate-500 hover:text-sky-700 transition">
-                        เข้าใช้งานโหมดสาธิต (ไม่ต้องล็อกอิน) &rarr;
+                        class="w-full py-3 px-4 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-sky-600"></i>
+                        <span>เข้าใช้งานโหมดสาธิต (สำหรับคณะกรรมการ / ทดสอบระบบ)</span>
                     </button>
                 </div>
             </div>
-        </main>
 
-        <!-- Minimal Footer -->
-        <footer class="max-w-5xl w-full mx-auto text-center sm:text-left text-xs text-slate-400">
-            Smart Water Quality Monitoring &amp; Control System
-        </footer>
+            <!-- Bottom Note -->
+            <div class="text-xs text-slate-400 flex items-center justify-between pt-4 border-t border-slate-100">
+                <span>AQUAFLOW TELEMETRY</span>
+                <span class="font-mono-num text-[11px]">CLOUD SYNC</span>
+            </div>
+        </div>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- 2. DASHBOARD PAGE (CLEAN, AIRY, UNCLUTTERED)                          -->
+    <!-- 2. MAIN DASHBOARD SCREEN (BALANCED, SPACIOUS, WITH ARC GAUGES)        -->
     <!-- ===================================================================== -->
     <div id="dashboardScreen" class="hidden flex-1 flex flex-col">
 
-        <!-- Clean White Top Navbar -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <svg class="w-8 h-8 shrink-0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="48" height="48" rx="11" fill="#0284C7"/>
-                        <path d="M24 11C24 11 14 23.5 14 31C14 36.5 18.5 41 24 41C29.5 41 34 36.5 34 31C34 23.5 24 11 24 11Z" fill="white"/>
-                        <path d="M18.5 31C20.3 28.8 22.2 28.8 24 31C25.8 33.2 27.7 33.2 29.5 31" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- Top Dark Navy Header -->
+        <header class="bg-[#071526] text-white border-b border-sky-900/60 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3.5">
+                    <svg class="w-10 h-10 shrink-0" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="40" cy="40" r="37" fill="#071527" stroke="#0284C7" stroke-width="2.5"/>
+                        <polygon points="40,12 64,26 64,54 40,68 16,54 16,26" fill="#0B213B" stroke="#38BDF8" stroke-width="1.2"/>
+                        <path d="M40 18 C40 18 25 35 25 46 C25 54.3 31.7 61 40 61 C48.3 61 55 54.3 55 46 C55 35 40 18 40 18 Z" fill="#0284C7"/>
+                        <path d="M29 46 Q34.5 39 40 46 T51 46" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="40" cy="31" r="2.5" fill="#FDE68A"/>
                     </svg>
                     <div>
-                        <h1 class="text-sm sm:text-base font-bold text-slate-900 leading-tight">ระบบตรวจวัดและควบคุมคุณภาพน้ำ</h1>
-                        <p id="lastUpdated" class="text-[11px] text-slate-400">ยังไม่ได้เชื่อมต่อเครื่อง</p>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-sm tracking-wider text-white">AQUAFLOW</span>
+                            <span class="text-[10px] font-mono-num uppercase px-2 py-0.5 rounded bg-sky-500/20 text-sky-300">LIVE</span>
+                        </div>
+                        <h1 class="text-xs sm:text-sm text-slate-300">ระบบตรวจวัดคุณภาพน้ำและควบคุมชุดบำบัดอัตโนมัติ</h1>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <span id="systemClock" class="hidden md:inline text-xs tabular-nums text-slate-400 mr-1"></span>
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <div class="hidden lg:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs font-mono-num text-slate-200">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span id="systemClock">--:--:--</span>
+                    </div>
 
-                    <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
-                        <span class="text-slate-400">ผู้ใช้:</span>
-                        <strong id="displayUsername" class="text-slate-800 font-semibold">User</strong>
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 py-1.5 px-3 rounded-lg text-xs">
+                        <span class="text-slate-400">ผู้ใช้งาน:</span>
+                        <strong id="displayUsername" class="text-sky-300 font-semibold">OPERATOR</strong>
                     </div>
 
                     <button onclick="openAddMachineModal()"
-                        class="px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition">
-                        + เพิ่มเครื่อง
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-lg transition">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>เพิ่มเครื่องใหม่</span>
                     </button>
 
                     <button onclick="logout()"
-                        class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition">
-                        ออกจากระบบ
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700 rounded-lg transition">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">ออกจากระบบ</span>
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1">
+        <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-7 space-y-6 flex-1">
 
-            <!-- 1. Machine Connection Bar -->
-            <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-2.5">
-                    <label class="text-xs font-semibold text-slate-600">รหัสเครื่อง (Machine ID)</label>
-                    <input type="text" id="machineIdInput" placeholder="เช่น ESP32-01"
-                        class="px-3 py-1.5 text-sm tabular-nums border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 w-44 bg-slate-50/50 text-slate-900">
-                    <button onclick="bindMachine()"
-                        class="px-4 py-1.5 text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition">
-                        เชื่อมต่อ
-                    </button>
+            <!-- 1. Station Selector & Status Bar -->
+            <div class="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="text-xs font-bold text-slate-700">หมายเลขเครื่อง (Machine ID):</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="machineIdInput" placeholder="เช่น ESP32-01"
+                            class="px-3.5 py-2 text-sm font-mono-num font-medium border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 w-44 bg-slate-50 text-slate-900">
+                        <button onclick="bindMachine()"
+                            class="px-4 py-2 text-xs font-semibold text-white bg-[#071526] hover:bg-sky-900 rounded-lg transition flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-3.5 h-3.5 text-sky-400"></i>
+                            <span>เชื่อมต่อ</span>
+                        </button>
+                    </div>
                     <span id="connectionBadge" class="hidden px-2.5 py-1 text-xs rounded-md font-medium"></span>
                 </div>
 
-                <div id="overallWaterStatus" class="text-xs font-medium text-slate-500">
-                    สถานะภาพรวม: รอการเชื่อมต่อเครื่อง
+                <div class="flex flex-wrap items-center justify-between lg:justify-end gap-4 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 text-xs">
+                    <div id="overallWaterStatus" class="px-3 py-1 rounded-md bg-slate-100 text-slate-600 font-semibold">
+                        ภาพรวมคุณภาพน้ำ: รอการเชื่อมต่อเครื่อง
+                    </div>
+                    <div class="flex items-center gap-1.5 text-slate-500">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span id="lastUpdated">ยังไม่ได้เชื่อมต่อเครื่อง</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- 2. Sensor Readings (3 Clean Cards) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 2. 3 Sensor Cards with Clean Semi-Circular Gauges -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                <!-- Temperature -->
-                <div class="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold text-slate-700">อุณหภูมิน้ำ (Temperature)</span>
-                        <span id="tempStatus" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
-                    </div>
-
-                    <div class="my-5 flex items-baseline gap-1.5">
-                        <span id="tempCurrent" class="text-4xl font-bold tabular-nums text-slate-900">--</span>
-                        <span class="text-sm text-slate-400 font-medium">°C</span>
-                    </div>
-
-                    <div>
-                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-                            <div id="tempBar" class="h-full bg-orange-500 transition-all duration-300" style="width: 0%"></div>
+                <!-- Temperature Card -->
+                <div class="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-sm">
+                    <div class="h-1 bg-orange-500"></div>
+                    <div class="p-6">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">อุณหภูมิน้ำ (Temperature)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ &lt; 35.0 °C</p>
+                            </div>
+                            <span id="tempStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500">รอข้อมูล</span>
                         </div>
-                        <div class="flex justify-between text-[11px] text-slate-400">
-                            <span>เกณฑ์ปกติ &lt; 35 °C</span>
-                            <span>อันตราย &gt; 40 °C</span>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- pH -->
-                <div class="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold text-slate-700">ความเป็นกรด-ด่าง (pH)</span>
-                        <span id="phStatus" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
-                    </div>
-
-                    <div class="my-5 flex items-baseline gap-1.5">
-                        <span id="phCurrent" class="text-4xl font-bold tabular-nums text-slate-900">--</span>
-                        <span class="text-sm text-slate-400 font-medium">pH</span>
-                    </div>
-
-                    <div>
-                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-                            <div id="phBar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
-                        </div>
-                        <div class="flex justify-between text-[11px] text-slate-400">
-                            <span>เกณฑ์ปกติ 5.5 – 7.5</span>
-                            <span>อันตราย &lt; 4 / &gt; 9</span>
+                        <div class="mt-6 mb-2 flex items-end justify-between gap-4">
+                            <div class="flex items-baseline gap-1.5">
+                                <span id="tempCurrent" class="text-4xl font-bold font-mono-num text-slate-900">--</span>
+                                <span class="text-sm font-mono-num font-semibold text-slate-400">°C</span>
+                            </div>
+                            <svg class="w-28 h-16 shrink-0" viewBox="0 0 120 68">
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
+                                <path id="tempGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F97316" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                            </svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- EC -->
-                <div class="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold text-slate-700">ค่าการนำไฟฟ้า (EC)</span>
-                        <span id="ecStatus" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
-                    </div>
-
-                    <div class="my-5 flex items-baseline gap-1.5">
-                        <span id="ecCurrent" class="text-4xl font-bold tabular-nums text-slate-900">--</span>
-                        <span class="text-sm text-slate-400 font-medium">mS/cm</span>
-                    </div>
-
-                    <div>
-                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-                            <div id="ecBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+                <!-- pH Card -->
+                <div class="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-sm">
+                    <div class="h-1 bg-sky-500"></div>
+                    <div class="p-6">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">ความเป็นกรด-ด่าง (pH Level)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ 5.50 – 7.50 pH</p>
+                            </div>
+                            <span id="phStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500">รอข้อมูล</span>
                         </div>
-                        <div class="flex justify-between text-[11px] text-slate-400">
-                            <span>เกณฑ์ปกติ &le; 2.0 mS/cm</span>
-                            <span>อันตราย &gt; 3.0 mS/cm</span>
+
+                        <div class="mt-6 mb-2 flex items-end justify-between gap-4">
+                            <div class="flex items-baseline gap-1.5">
+                                <span id="phCurrent" class="text-4xl font-bold font-mono-num text-slate-900">--</span>
+                                <span class="text-sm font-mono-num font-semibold text-slate-400">pH</span>
+                            </div>
+                            <svg class="w-28 h-16 shrink-0" viewBox="0 0 120 68">
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
+                                <path id="phGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#0284C7" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EC Card -->
+                <div class="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-sm">
+                    <div class="h-1 bg-emerald-500"></div>
+                    <div class="p-6">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">ค่าการนำไฟฟ้า (EC Level)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ &le; 2.00 mS/cm</p>
+                            </div>
+                            <span id="ecStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500">รอข้อมูล</span>
+                        </div>
+
+                        <div class="mt-6 mb-2 flex items-end justify-between gap-4">
+                            <div class="flex items-baseline gap-1.5">
+                                <span id="ecCurrent" class="text-4xl font-bold font-mono-num text-slate-900">--</span>
+                                <span class="text-sm font-mono-num font-semibold text-slate-400">mS/cm</span>
+                            </div>
+                            <svg class="w-28 h-16 shrink-0" viewBox="0 0 120 68">
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
+                                <path id="ecGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#10B981" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                            </svg>
                         </div>
                     </div>
                 </div>
 
             </div>
 
-            <!-- 3. Equipment Control Switches (4 Clean Cards) -->
-            <div class="bg-white border border-slate-200 rounded-xl p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-bold text-slate-900">แผงควบคุมการทำงานของอุปกรณ์</h2>
-                    <span class="text-xs text-slate-400">สั่งเปิด-ปิดแบบเรียลไทม์</span>
+            <!-- 3. 4-Channel Actuator Control Panel -->
+            <div class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
+                        <h2 class="text-base font-bold text-slate-900">แผงควบคุมชุดขับเคลื่อนและปั๊มบำบัด</h2>
+                    </div>
+                    <span class="text-xs text-slate-400">สั่งเปิด-ปิดการทำงานของอุปกรณ์แบบเรียลไทม์</span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                     <!-- Motor 1 -->
-                    <div class="border border-slate-200 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-sm font-semibold text-slate-800">มอเตอร์ 1 (Motor 1)</div>
-                            <div class="flex items-center gap-1.5 mt-1">
-                                <span id="motor1Led" class="led-dot led-standby"></span>
-                                <span id="motor1StateText" class="text-xs text-slate-400">ปิดอยู่</span>
+                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm">Motor 1 (ชุดขับเคลื่อน 1)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 1</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sky-700">
+                                <i data-lucide="cog" class="w-4 h-4"></i>
                             </div>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
-                        </label>
+                        <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="motor1Led" class="led-dot led-standby"></span>
+                                <span id="motor1StateText" class="text-xs font-medium text-slate-500">หยุดพัก</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Motor 2 -->
-                    <div class="border border-slate-200 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-sm font-semibold text-slate-800">มอเตอร์ 2 (Motor 2)</div>
-                            <div class="flex items-center gap-1.5 mt-1">
-                                <span id="motor2Led" class="led-dot led-standby"></span>
-                                <span id="motor2StateText" class="text-xs text-slate-400">ปิดอยู่</span>
+                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm">Motor 2 (ชุดขับเคลื่อน 2)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 2</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sky-700">
+                                <i data-lucide="cog" class="w-4 h-4"></i>
                             </div>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
-                        </label>
+                        <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="motor2Led" class="led-dot led-standby"></span>
+                                <span id="motor2StateText" class="text-xs font-medium text-slate-500">หยุดพัก</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Pump 1 -->
-                    <div class="border border-slate-200 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-sm font-semibold text-slate-800">ปั๊มน้ำ 1 (Pump 1)</div>
-                            <div class="flex items-center gap-1.5 mt-1">
-                                <span id="pump1Led" class="led-dot led-standby"></span>
-                                <span id="pump1StateText" class="text-xs text-slate-400">ปิดอยู่</span>
+                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm">Pump 1 (ปั๊มน้ำชุดที่ 1)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 3</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-teal-600">
+                                <i data-lucide="waves" class="w-4 h-4"></i>
                             </div>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="pump1Toggle" onchange="toggleDevice('pump1Toggle', '3')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
-                        </label>
+                        <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="pump1Led" class="led-dot led-standby"></span>
+                                <span id="pump1StateText" class="text-xs font-medium text-slate-500">หยุดพัก</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="pump1Toggle" onchange="toggleDevice('pump1Toggle', '3')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Pump 2 -->
-                    <div class="border border-slate-200 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-sm font-semibold text-slate-800">ปั๊มน้ำ 2 (Pump 2)</div>
-                            <div class="flex items-center gap-1.5 mt-1">
-                                <span id="pump2Led" class="led-dot led-standby"></span>
-                                <span id="pump2StateText" class="text-xs text-slate-400">ปิดอยู่</span>
+                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm">Pump 2 (ปั๊มน้ำชุดที่ 2)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 4</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-teal-600">
+                                <i data-lucide="waves" class="w-4 h-4"></i>
                             </div>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
-                        </label>
+                        <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="pump2Led" class="led-dot led-standby"></span>
+                                <span id="pump2StateText" class="text-xs font-medium text-slate-500">หยุดพัก</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
                     </div>
 
                 </div>
             </div>
 
-            <!-- 4. Historical Charts -->
-            <div class="bg-white border border-slate-200 rounded-xl p-5 space-y-6">
+            <!-- 4. Time-Series Charts -->
+            <div class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-6 space-y-6">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="text-sm font-bold text-slate-900">กราฟข้อมูลย้อนหลัง</h2>
+                        <h2 class="text-base font-bold text-slate-900">กราฟวิเคราะห์แนวโน้มข้อมูลย้อนหลัง</h2>
                         <p id="historyCount" class="text-xs text-slate-400 mt-0.5">ข้อมูลที่บันทึก: 0 รายการ</p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2">
-                        <input type="date" id="datePicker" onchange="fetchHistory()"
-                            class="px-3 py-1.5 text-xs tabular-nums border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-sky-600">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+                            <label class="text-xs font-medium text-slate-600">วันที่:</label>
+                            <input type="date" id="datePicker" onchange="fetchHistory()"
+                                class="text-xs font-mono-num text-slate-800 focus:outline-none bg-transparent">
+                        </div>
+
                         <button type="button" onclick="exportCsv()"
-                            class="px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-lg transition">
-                            ดาวน์โหลด CSV
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-700 hover:bg-sky-800 rounded-lg transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>ส่งออก CSV</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Temperature Chart -->
-                <div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <span class="text-xs font-semibold text-slate-700">อุณหภูมิน้ำ (°C)</span>
-                        <span id="tempStats" class="text-xs tabular-nums text-slate-400">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</span>
+                <div class="space-y-6">
+                    <!-- Chart 1 -->
+                    <div class="border border-slate-100 rounded-xl p-4 bg-slate-50/30">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                                <h3 class="text-xs font-bold text-slate-800">แนวโน้มอุณหภูมิน้ำ (°C)</h3>
+                            </div>
+                            <div id="tempStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="tempChart"></canvas>
+                        </div>
                     </div>
-                    <div class="h-52 relative">
-                        <canvas id="tempChart"></canvas>
-                    </div>
-                </div>
 
-                <!-- pH Chart -->
-                <div class="pt-4 border-t border-slate-100">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <span class="text-xs font-semibold text-slate-700">ความเป็นกรด-ด่าง (pH)</span>
-                        <span id="phStats" class="text-xs tabular-nums text-slate-400">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</span>
+                    <!-- Chart 2 -->
+                    <div class="border border-slate-100 rounded-xl p-4 bg-slate-50/30">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
+                                <h3 class="text-xs font-bold text-slate-800">แนวโน้มความเป็นกรด-ด่าง (pH)</h3>
+                            </div>
+                            <div id="phStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="phChart"></canvas>
+                        </div>
                     </div>
-                    <div class="h-52 relative">
-                        <canvas id="phChart"></canvas>
-                    </div>
-                </div>
 
-                <!-- EC Chart -->
-                <div class="pt-4 border-t border-slate-100">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <span class="text-xs font-semibold text-slate-700">ค่าการนำไฟฟ้า (mS/cm)</span>
-                        <span id="ecStats" class="text-xs tabular-nums text-slate-400">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</span>
-                    </div>
-                    <div class="h-52 relative">
-                        <canvas id="ecChart"></canvas>
+                    <!-- Chart 3 -->
+                    <div class="border border-slate-100 rounded-xl p-4 bg-slate-50/30">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                                <h3 class="text-xs font-bold text-slate-800">แนวโน้มค่าการนำไฟฟ้า (mS/cm)</h3>
+                            </div>
+                            <div id="ecStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="ecChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
         </main>
+
+        <footer class="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div>AQUAFLOW — ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ</div>
+                <div class="font-mono-num text-[11px]">SMART WATER TELEMETRY</div>
+            </div>
+        </footer>
     </div>
 
     <!-- ===================================================================== -->
     <!-- 3. ADD MACHINE MODAL                                                  -->
     <!-- ===================================================================== -->
-    <div id="addMachineModal" class="fixed inset-0 bg-slate-900/40 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-xl border border-slate-200 p-6 shadow-xl">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-slate-900">เพิ่มเครื่องใหม่</h3>
-                <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+    <div id="addMachineModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-xl border border-slate-200 shadow-2xl overflow-hidden">
+            <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900">เพิ่มเครื่องตรวจวัดใหม่ (Register Machine ID)</h3>
+                <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-700">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
 
-            <form onsubmit="submitNewMachine(event)" class="space-y-4">
+            <form onsubmit="submitNewMachine(event)" class="p-5 space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1.5">รหัสเครื่อง (Machine ID)</label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">หมายเลขเครื่อง (Machine ID)</label>
                     <input type="text" id="newMachineIdInput" required placeholder="เช่น ESP32-01"
-                        class="w-full px-3.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 text-sm">
+                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 font-mono-num text-sm">
                 </div>
 
-                <div class="flex justify-end gap-2 pt-1">
+                <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closeAddMachineModal()"
-                        class="py-2 px-4 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition">
+                        class="py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition">
                         ยกเลิก
                     </button>
                     <button type="submit" id="addMachineBtn"
-                        class="py-2 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition">
-                        บันทึก
+                        class="py-2 px-4 rounded-lg bg-[#071526] hover:bg-sky-900 text-white text-xs font-semibold transition">
+                        บันทึกและเชื่อมต่อ
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="js/config.js?v=6"></script>
-    <script src="js/app.js?v=6"></script>
+    <script src="js/config.js?v=7"></script>
+    <script src="js/app.js?v=7"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
 </body>
 </html>
