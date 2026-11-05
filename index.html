@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Sensor & Control Dashboard</title>
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            500: '#6366F1',
+                            600: '#4F46E5',
+                            700: '#4338CA',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        /* Custom Switch toggle */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10B981;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #10B981;
+        }
+        /* Pulse dot for live status */
+        .live-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .4; transform: scale(1.15); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ========================================== -->
+    <!-- 1. AUTH SCREEN (Login / Register)          -->
+    <!-- ========================================== -->
+    <div id="authScreen" class="flex-1 flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-8 rounded-2xl shadow-xl border border-slate-200">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 mb-4 shadow-inner">
+                    <i data-lucide="cpu" class="w-8 h-8"></i>
+                </div>
+                <h2 id="authTitle" class="text-2xl font-bold text-slate-800">เข้าสู่ระบบ</h2>
+                <p class="text-sm text-slate-500 mt-1">Smart Sensor & IoT Control Platform</p>
+            </div>
+
+            <div id="authMsgBox" class="hidden mb-4 p-3 rounded-lg text-sm bg-red-50 text-red-600 border border-red-200 text-center"></div>
+
+            <form onsubmit="handleAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                        </span>
+                        <input type="text" id="authUsername" required
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 transition"
+                            placeholder="กรอกชื่อผู้ใช้งานของคุณ">
+                    </div>
+                </div>
+
+                <button type="submit" id="authSubmitBtn"
+                    class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg shadow-indigo-200 transition duration-200 flex items-center justify-center gap-2">
+                    <span id="authSubmitText">เข้าสู่ระบบ</span>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <button type="button" onclick="toggleAuthMode()" id="authSwitchText" class="text-sm text-indigo-600 hover:text-indigo-800 hover:underline transition">
+                    ยังไม่มีบัญชี? สมัครสมาชิกที่นี่
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. MAIN DASHBOARD SCREEN                   -->
+    <!-- ========================================== -->
+    <div id="dashboardScreen" class="hidden flex-1 flex flex-col">
+        <!-- Top Navbar -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100">
+                        <i data-lucide="activity" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-800 leading-tight">Smart Sensor Dashboard</h1>
+                        <div class="flex items-center gap-2 text-xs text-slate-500">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+                            <span>IoT Monitor & Control</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Profile & Action Buttons -->
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex items-center gap-2 text-sm text-slate-600 bg-slate-100 py-1.5 px-3 rounded-lg">
+                        <i data-lucide="user-check" class="w-4 h-4 text-indigo-600"></i>
+                        <span>ผู้ใช้งาน:</span>
+                        <strong id="displayUsername" class="text-slate-800 font-semibold">User</strong>
+                    </div>
+
+                    <button onclick="openAddMachineModal()"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">เพิ่ม Machine ID</span>
+                    </button>
+
+                    <button onclick="logout()" title="ออกจากระบบ"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">ออกจากระบบ</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+            
+            <!-- Machine Selector & Date Filter Card -->
+            <div class="glass-card rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <label class="text-sm font-medium text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                        <i data-lucide="cpu" class="w-4 h-4 text-slate-500"></i>
+                        Machine ID:
+                    </label>
+                    <div class="flex items-center gap-2 flex-1 sm:flex-initial">
+                        <input type="text" id="machineIdInput" placeholder="กรอกรหัสเครื่อง"
+                            class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44">
+                        <button onclick="bindMachine()"
+                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">
+                            เชื่อมต่อ
+                        </button>
+                    </div>
+                    <span id="connectionBadge" class="hidden px-2.5 py-1 text-xs rounded-full font-medium"></span>
+                </div>
+
+                <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                    <label class="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                        <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
+                        วันที่ดูกราฟ:
+                    </label>
+                    <input type="date" id="datePicker" onchange="fetchHistory()"
+                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                </div>
+            </div>
+
+            <!-- Hardware Control Switches (4 Controls) -->
+            <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-indigo-600"></i>
+                        ควบคุมรีเลย์ & อุปกรณ์ (Hardware Switches)
+                    </h2>
+                    <span class="text-xs text-slate-500">สั่งงานแบบ Real-time ไปยังบอร์ด</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Control 1: Motor 1 -->
+                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <i data-lucide="cog" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-slate-800 text-sm">Motor 1</h3>
+                                <p class="text-xs text-slate-400">คำสั่งรหัส '1'</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+
+                    <!-- Control 2: Motor 2 -->
+                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <i data-lucide="cog" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-slate-800 text-sm">Motor 2</h3>
+                                <p class="text-xs text-slate-400">คำสั่งรหัส '2'</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+
+                    <!-- Control 3: Pump 1 -->
+                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+                                <i data-lucide="droplet" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-slate-800 text-sm">Pump 1</h3>
+                                <p class="text-xs text-slate-400">คำสั่งรหัส '3'</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="pump1Toggle" onchange="toggleDevice('pump1Toggle', '3')" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+
+                    <!-- Control 4: Pump 2 -->
+                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                                <i data-lucide="droplets" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-slate-800 text-sm">Pump 2</h3>
+                                <p class="text-xs text-slate-400">คำสั่งรหัส '4'</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor Monitoring Cards & Charts Grid -->
+            <div class="space-y-6">
+                
+                <!-- 1. Temperature Card -->
+                <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
+                                    <i data-lucide="thermometer" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-base font-semibold text-slate-800">Temperature (°C)</h3>
+                            </div>
+                            <p class="text-xs text-slate-500">อุณหภูมิปัจจุบัน</p>
+                        </div>
+                        <div class="my-4">
+                            <div class="flex items-baseline gap-2">
+                                <span id="tempCurrent" class="text-4xl font-bold text-rose-600">--</span>
+                                <span class="text-lg text-slate-400">°C</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">สถานะ:</span>
+                            <span id="tempStatus" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 h-56 relative">
+                        <canvas id="tempChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. pH Level Card -->
+                <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center">
+                                    <i data-lucide="flask-conical" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-base font-semibold text-slate-800">pH Level</h3>
+                            </div>
+                            <p class="text-xs text-slate-500">ค่าความเป็นกรด-ด่าง</p>
+                        </div>
+                        <div class="my-4">
+                            <div class="flex items-baseline gap-2">
+                                <span id="phCurrent" class="text-4xl font-bold text-blue-600">--</span>
+                                <span class="text-lg text-slate-400">pH</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">สถานะ:</span>
+                            <span id="phStatus" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 h-56 relative">
+                        <canvas id="phChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. EC Level Card -->
+                <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                    <i data-lucide="zap" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="text-base font-semibold text-slate-800">EC Level</h3>
+                            </div>
+                            <p class="text-xs text-slate-500">ค่าการนำไฟฟ้า / ธาตุอาหาร</p>
+                        </div>
+                        <div class="my-4">
+                            <div class="flex items-baseline gap-2">
+                                <span id="ecCurrent" class="text-4xl font-bold text-emerald-600">--</span>
+                                <span class="text-lg text-slate-400">mS/cm</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">สถานะ:</span>
+                            <span id="ecStatus" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 h-56 relative">
+                        <canvas id="ecChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+            Smart Sensor Dashboard • Powered by Google Sheets & Vercel
+        </footer>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. ADD MACHINE MODAL                       -->
+    <!-- ========================================== -->
+    <div id="addMachineModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
+                    เพิ่ม Machine ID ใหม่
+                </h3>
+                <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500">ลงทะเบียนเครื่องจักรหรือบอร์ดไมโครคอนโทรลเลอร์เข้ากับบัญชีนี้</p>
+            
+            <form onsubmit="submitNewMachine(event)" class="space-y-4">
+                <input type="text" id="newMachineIdInput" required placeholder="ตัวอย่าง: ESP32-01"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm">
+                
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAddMachineModal()"
+                        class="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="addMachineBtn"
+                        class="flex-1 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition shadow-sm">
+                        เพิ่มเครื่อง
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load Application Logic -->
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Render lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
