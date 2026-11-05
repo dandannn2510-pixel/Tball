@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23071324' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M32 12 C32 12 18 29 18 39 C18 46.7 24.3 53 32 53 C39.7 53 46 46.7 46 39 C46 29 32 12 32 12 Z' fill='url(%23g)'/%3E%3Cpath d='M22 39 Q27 34 32 39 T42 39' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Prompt:wght@200;300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,9 +16,9 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"IBM Plex Sans Thai"', '"Anuphan"', 'sans-serif'],
-                        display: ['"Anuphan"', '"IBM Plex Sans Thai"', 'sans-serif'],
-                        mono: ['"JetBrains Mono"', 'monospace'],
+                        sans: ['"Space Grotesk"', '"Prompt"', 'sans-serif'],
+                        display: ['"Space Grotesk"', '"Prompt"', 'sans-serif'],
+                        mono: ['"Space Grotesk"', '"Prompt"', 'sans-serif'],
                     }
                 }
             }
@@ -26,14 +26,27 @@
     </script>
     <style>
         body {
-            font-family: 'IBM Plex Sans Thai', sans-serif;
-            background-color: #F1F5F9;
+            font-family: 'Space Grotesk', 'Prompt', sans-serif;
+            background-color: #F4F6F9;
             color: #0F172A;
+            letter-spacing: -0.01em;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .font-mono-num {
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'Space Grotesk', 'Prompt', sans-serif;
             font-variant-numeric: tabular-nums;
+            letter-spacing: -0.03em;
+        }
+        .graphic-title {
+            letter-spacing: -0.025em;
+            line-height: 1.18;
+        }
+        .graphic-num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.045em;
+            line-height: 1;
         }
         /* Left Showcase Ocean Canvas */
         .hydro-showcase-bg {
@@ -78,75 +91,83 @@
     <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
 
     <!-- ===================================================================== -->
-    <!-- 1. SPLIT-SCREEN LOGIN PORTAL (EDITORIAL PHOTOGRAPHY & CLEAN TYPOGRAPHY) -->
+    <!-- 1. SPLIT-SCREEN LOGIN PORTAL (GRAPHIC DESIGN STUDIO TYPOGRAPHY)       -->
     <!-- ===================================================================== -->
     <div id="authScreen" class="min-h-screen flex flex-col lg:flex-row bg-white">
 
-        <!-- LEFT COVER: Full-bleed Water Photography + Lower-Third Editorial Typography -->
-        <div class="lg:w-[56%] xl:w-[60%] relative min-h-[420px] lg:min-h-screen flex flex-col justify-between p-8 sm:p-12 lg:p-16 xl:p-20 text-white overflow-hidden bg-[#061826]">
+        <!-- LEFT COVER: Full-bleed Water Photography + Studio Editorial Typography -->
+        <div class="lg:w-[56%] xl:w-[60%] relative min-h-[440px] lg:min-h-screen flex flex-col justify-between p-8 sm:p-12 lg:p-16 xl:p-20 text-white overflow-hidden bg-[#061826]">
 
-            <!-- Real High-Resolution Water Surface Photography with Graceful Fallback -->
+            <!-- Real High-Resolution Water Surface Photography -->
             <img
                 src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=85"
                 alt="Water Surface"
                 class="absolute inset-0 w-full h-full object-cover object-center scale-[1.02]"
             />
 
-            <!-- Natural Editorial Gradient Overlay (Darkened at top-left and bottom for crisp text legibility) -->
-            <div class="absolute inset-0 bg-gradient-to-b from-[#04121F]/70 via-[#061C2E]/45 to-[#030D17]/95"></div>
+            <!-- Editorial Gradient Vignette -->
+            <div class="absolute inset-0 bg-gradient-to-b from-[#04121F]/65 via-[#061C2E]/40 to-[#030D17]/95"></div>
 
-            <!-- Top Brand Mark: Pure Minimalist Geometric Wave Emblem (No hexagons or cartoon icons) -->
-            <div class="relative z-10 flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-sm">
-                    <svg class="w-6 h-6 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 13C7.5 9.5 11.5 9.5 16 13C20.5 16.5 24.5 16.5 28 13" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-                        <path d="M4 20C7.5 16.5 11.5 16.5 16 20C20.5 23.5 24.5 23.5 28 20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity="0.65"/>
-                    </svg>
+            <!-- Top Brand Mark: Swiss Studio Lockup -->
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 13.5C8.5 10 12.2 10 16 13.5C19.8 17 23.5 17 27 13.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                            <path d="M5 19.5C8.5 16 12.2 16 16 19.5C19.8 23 23.5 23 27 19.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity="0.6"/>
+                        </svg>
+                    </div>
+                    <div class="flex items-baseline gap-2.5">
+                        <span class="text-sm font-semibold tracking-[0.22em] uppercase text-white">AQUAFLOW</span>
+                        <span class="text-xs font-light text-white/60">Water Telemetry</span>
+                    </div>
                 </div>
-                <div>
-                    <div class="font-display font-bold text-base tracking-wide text-white leading-tight">AQUAFLOW</div>
-                    <div class="text-xs text-white/70 font-light">Water Quality Monitoring &amp; Control</div>
-                </div>
+                <span class="hidden sm:inline text-xs font-light tracking-[0.15em] text-white/60 uppercase">TH // 2026</span>
             </div>
 
-            <!-- Bottom Editorial Typography Block (Magazine / Keynote Style — No 3 AI Boxes) -->
+            <!-- Bottom Editorial Typography Block (Light + SemiBold Contrast) -->
             <div class="relative z-10 mt-auto pt-16 max-w-2xl">
-                <p class="text-xs sm:text-sm font-medium text-sky-300 mb-3">
-                    โครงงานระบบบริหารจัดการและบำบัดคุณภาพน้ำอัจฉริยะ
-                </p>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-light text-sky-200 mb-5">
+                    <span>Smart Water Quality Monitoring &amp; Control</span>
+                </div>
 
-                <h1 class="font-display text-3xl sm:text-4xl xl:text-[42px] font-bold text-white leading-[1.25] tracking-tight">
-                    ระบบตรวจวัดคุณภาพน้ำ<br>และควบคุมการบำบัดอัตโนมัติ
+                <h1 class="graphic-title text-3xl sm:text-4xl xl:text-[46px] text-white">
+                    <span class="font-extralight text-white/85 block">ระบบตรวจวัดคุณภาพน้ำ</span>
+                    <span class="font-semibold text-white block mt-1">และควบคุมการบำบัดอัตโนมัติ</span>
                 </h1>
 
-                <p class="text-sm sm:text-base text-white/80 leading-relaxed font-light mt-4 max-w-xl">
-                    ติดตามและวิเคราะห์คุณภาพน้ำแบบเรียลไทม์ พร้อมระบบสั่งการชุดมอเตอร์และปั๊มบำบัดผ่านส่วนติดต่อผู้ใช้งานบนคลาวด์
+                <p class="text-sm sm:text-base text-white/75 leading-relaxed font-light mt-5 max-w-lg">
+                    ผสานการตรวจวัดค่าทางกายภาพและเคมีของน้ำเข้ากับระบบควบคุมอัตโนมัติ รายงานผลและสั่งการผ่านคลาวด์แบบเรียลไทม์
                 </p>
 
-                <!-- Clean Architectural Hairline Spec Row (Replaces the 3 AI cards) -->
-                <div class="mt-10 pt-7 border-t border-white/20 grid grid-cols-3 gap-6">
+                <!-- Editorial Numbered Specification Strip -->
+                <div class="mt-12 pt-7 border-t border-white/20 grid grid-cols-3 gap-6">
                     <div>
-                        <div class="text-lg sm:text-xl font-display font-bold text-white">อุณหภูมิน้ำ</div>
-                        <div class="text-xs text-white/65 mt-0.5">หน่วยวัด °C (เกณฑ์ &lt; 35 °C)</div>
+                        <div class="text-xs font-light tracking-widest text-sky-300/90 mb-1">01 / TEMP</div>
+                        <div class="text-base sm:text-lg font-medium text-white">อุณหภูมิน้ำ</div>
+                        <div class="text-xs font-light text-white/60 mt-0.5">เกณฑ์ปกติ &lt; 35.0 °C</div>
                     </div>
-                    <div class="border-l border-white/20 pl-6">
-                        <div class="text-lg sm:text-xl font-display font-bold text-white">ค่ากรด-ด่าง (pH)</div>
-                        <div class="text-xs text-white/65 mt-0.5">เกณฑ์มาตรฐาน 5.5 – 7.5</div>
+                    <div class="border-l border-white/15 pl-6">
+                        <div class="text-xs font-light tracking-widest text-sky-300/90 mb-1">02 / pH</div>
+                        <div class="text-base sm:text-lg font-medium text-white">ค่ากรด-ด่าง</div>
+                        <div class="text-xs font-light text-white/60 mt-0.5">เกณฑ์ปกติ 5.5 – 7.5</div>
                     </div>
-                    <div class="border-l border-white/20 pl-6">
-                        <div class="text-lg sm:text-xl font-display font-bold text-white">ค่าการนำไฟฟ้า (EC)</div>
-                        <div class="text-xs text-white/65 mt-0.5">เกณฑ์มาตรฐาน &le; 2.0 mS/cm</div>
+                    <div class="border-l border-white/15 pl-6">
+                        <div class="text-xs font-light tracking-widest text-sky-300/90 mb-1">03 / EC</div>
+                        <div class="text-base sm:text-lg font-medium text-white">ค่าการนำไฟฟ้า</div>
+                        <div class="text-xs font-light text-white/60 mt-0.5">เกณฑ์ปกติ &le; 2.0 mS/cm</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN: Clean Sign-In Surface -->
+        <!-- RIGHT COLUMN: Studio Editorial Sign-In Surface -->
         <div class="lg:w-[44%] xl:w-[40%] bg-white flex flex-col justify-between p-8 sm:p-12 lg:p-16">
 
-            <!-- Top Database Connection Status -->
-            <div class="flex items-center justify-end">
-                <div id="apiStatus" class="text-xs text-slate-500 flex items-center gap-2">
+            <!-- Top Status -->
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium tracking-[0.16em] uppercase text-slate-400">PORTAL / ACCESS</span>
+                <div id="apiStatus" class="text-xs font-light text-slate-500 flex items-center gap-2">
                     <span class="led-dot led-standby"></span>
                     <span>กำลังตรวจสอบฐานข้อมูล...</span>
                 </div>
@@ -155,23 +176,24 @@
             <!-- Center Login Form -->
             <div class="my-10 lg:my-auto max-w-[360px] w-full mx-auto">
 
-                <div class="mb-8">
-                    <h2 id="authTitle" class="font-display text-2xl sm:text-3xl font-bold text-slate-900">
-                        เข้าสู่ระบบ
+                <div class="mb-9">
+                    <div class="text-xs font-medium tracking-[0.14em] uppercase text-sky-600 mb-2">WELCOME BACK</div>
+                    <h2 id="authTitle" class="graphic-title text-3xl sm:text-[34px] font-semibold text-slate-900">
+                        เข้าสู่ระบบควบคุม
                     </h2>
-                    <p class="text-sm text-slate-500 mt-2">
-                        กรอกชื่อผู้ใช้งานเพื่อเข้าสู่หน้าแสดงผลและแผงควบคุมอุปกรณ์
+                    <p class="text-sm font-light text-slate-500 mt-2">
+                        กรอกชื่อผู้ใช้งานเพื่อเข้าถึงหน้าแสดงผลและสั่งการอุปกรณ์
                     </p>
                 </div>
 
                 <!-- Clean Underline Tabs -->
                 <div class="flex border-b border-slate-200 mb-7">
                     <button type="button" id="tabLogin" onclick="switchAuthTab('login')"
-                        class="pb-3 pr-6 text-sm font-bold border-b-2 border-slate-900 text-slate-900 transition-all">
+                        class="pb-3 pr-6 text-sm font-semibold border-b-2 border-slate-900 text-slate-900 transition-all">
                         เข้าสู่ระบบ
                     </button>
                     <button type="button" id="tabRegister" onclick="switchAuthTab('register')"
-                        class="pb-3 px-6 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all">
+                        class="pb-3 px-6 text-sm font-normal border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all">
                         สมัครสมาชิกใหม่
                     </button>
                 </div>
@@ -180,32 +202,36 @@
 
                 <form onsubmit="handleAuth(event)" class="space-y-5">
                     <div>
-                        <label id="authUsernameLabel" class="block text-xs font-semibold text-slate-700 mb-2">
-                            ชื่อผู้ใช้งาน
+                        <label id="authUsernameLabel" class="block text-xs font-medium text-slate-600 mb-2">
+                            ชื่อผู้ใช้งาน (Username)
                         </label>
                         <input type="text" id="authUsername" required autocomplete="username"
-                            class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 text-sm transition"
+                            class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 text-sm font-normal transition"
                             placeholder="ระบุชื่อผู้ใช้งานของคุณ">
                     </div>
 
                     <button type="submit" id="authSubmitBtn"
-                        class="w-full py-3.5 px-5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition flex items-center justify-center shadow-sm">
-                        <span id="authSubmitText">เข้าสู่ระบบ</span>
+                        class="w-full py-3.5 px-5 rounded-full bg-slate-900 hover:bg-sky-900 text-white text-sm font-medium transition flex items-center justify-between group shadow-sm">
+                        <span id="authSubmitText" class="pl-1">เข้าสู่แผงควบคุมระบบ</span>
+                        <span class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                            <i data-lucide="arrow-up-right" class="w-4 h-4 text-white"></i>
+                        </span>
                     </button>
                 </form>
 
                 <!-- Evaluator Quick Access -->
-                <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                <div class="mt-9 pt-6 border-t border-slate-100 text-center">
                     <button type="button" onclick="quickGuestLogin()"
-                        class="w-full py-3 px-4 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition">
+                        class="w-full py-3 px-4 rounded-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium transition">
                         เข้าใช้งานโหมดสาธิต (สำหรับคณะกรรมการ / ทดสอบระบบ)
                     </button>
                 </div>
             </div>
 
             <!-- Bottom Subtle Caption -->
-            <div class="text-xs text-slate-400 text-center sm:text-left pt-4 border-t border-slate-100">
-                ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ
+            <div class="text-xs font-light text-slate-400 flex items-center justify-between pt-4 border-t border-slate-100">
+                <span>AQUAFLOW SYSTEM</span>
+                <span class="tracking-widest">v4.0</span>
             </div>
         </div>
     </div>
@@ -306,7 +332,7 @@
 
                         <div class="mt-6 mb-2 flex items-end justify-between gap-4">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="tempCurrent" class="text-4xl font-bold font-mono-num text-slate-900">--</span>
+                                <span id="tempCurrent" class="graphic-num text-5xl font-medium text-slate-900">--</span>
                                 <span class="text-sm font-mono-num font-semibold text-slate-400">°C</span>
                             </div>
                             <svg class="w-28 h-16 shrink-0" viewBox="0 0 120 68">
@@ -331,7 +357,7 @@
 
                         <div class="mt-6 mb-2 flex items-end justify-between gap-4">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="phCurrent" class="text-4xl font-bold font-mono-num text-slate-900">--</span>
+                                <span id="phCurrent" class="graphic-num text-5xl font-medium text-slate-900">--</span>
                                 <span class="text-sm font-mono-num font-semibold text-slate-400">pH</span>
                             </div>
                             <svg class="w-28 h-16 shrink-0" viewBox="0 0 120 68">
@@ -356,7 +382,7 @@
 
                         <div class="mt-6 mb-2 flex items-end justify-between gap-4">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="ecCurrent" class="text-4xl font-bold font-mono-num text-slate-900">--</span>
+                                <span id="ecCurrent" class="graphic-num text-5xl font-medium text-slate-900">--</span>
                                 <span class="text-sm font-mono-num font-semibold text-slate-400">mS/cm</span>
                             </div>
                             <svg class="w-28 h-16 shrink-0" viewBox="0 0 120 68">
