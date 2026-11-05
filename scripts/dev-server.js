@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
+const ROOT_DIR = path.resolve(__dirname, '..');
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec";
 
 const MIME_TYPES = {
@@ -63,17 +64,15 @@ const server = http.createServer(async (req, res) => {
 
     const pathname = req.url.split('?')[0];
 
-    // /api -> proxy ไป Google Apps Script
     if (pathname === '/api' || pathname.startsWith('/api/')) {
         await proxyToGas(req, res);
         return;
     }
 
-    // Static files
     const safePath = pathname === '/' ? '/index.html' : decodeURIComponent(pathname);
-    const filePath = path.join(__dirname, safePath);
+    const filePath = path.join(ROOT_DIR, safePath);
 
-    if (!filePath.startsWith(__dirname)) {
+    if (!filePath.startsWith(ROOT_DIR)) {
         res.writeHead(403, { 'Content-Type': 'text/plain' });
         res.end('403 Forbidden');
         return;
