@@ -475,3 +475,4 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
         }
     });
 }
+

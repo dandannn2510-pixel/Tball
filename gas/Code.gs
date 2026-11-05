@@ -199,3 +199,4 @@ function doGet(e) {
 
   return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Invalid GET action"})).setMimeType(ContentService.MimeType.JSON);
 }
+
