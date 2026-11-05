@@ -3,167 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Sensor & Control Dashboard</title>
-    <!-- Google Fonts: Prompt -->
+    <title>ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ | Water Quality Telemetry & Control System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Prompt', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#EEF2FF',
-                            100: '#E0E7FF',
-                            500: '#6366F1',
-                            600: '#4F46E5',
-                            700: '#4338CA',
-                        }
+                        sans: ['"IBM Plex Sans Thai"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
                     }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(229, 231, 235, 0.8);
+        body {
+            font-family: 'IBM Plex Sans Thai', sans-serif;
+            background-color: #EEF2F6;
+            color: #0F172A;
         }
-        /* Custom Switch toggle */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #10B981;
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
         }
-        .toggle-checkbox:checked + .toggle-label {
+        /* Subtle technical blueprint grid for auth background */
+        .tech-grid-bg {
+            background-color: #0B162C;
+            background-image:
+                linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        .panel-card {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+        .panel-header {
+            background: #F8FAFC;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 10px 16px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+        /* Industrial LED indicator */
+        .led-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+        .led-online {
             background-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
         }
-        /* Pulse dot for live status */
-        .live-dot {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .led-standby {
+            background-color: #94A3B8;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: .4; transform: scale(1.15); }
+        .led-warning {
+            background-color: #F59E0B;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+        }
+        .led-error {
+            background-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-700 selection:text-white">
 
     <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
 
     <!-- ========================================== -->
-    <!-- 1. AUTH SCREEN (Login / Register)          -->
+    <!-- 1. AUTHENTICATION PORTAL                   -->
     <!-- ========================================== -->
-    <div id="authScreen" class="flex-1 flex items-center justify-center p-4">
-        <div class="glass-card w-full max-w-md p-8 rounded-2xl shadow-xl border border-slate-200">
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 mb-3 shadow-inner">
-                    <i data-lucide="cpu" class="w-8 h-8"></i>
+    <div id="authScreen" class="flex-1 flex flex-col justify-between tech-grid-bg p-4 sm:p-8">
+        <!-- Top Institutional Identification Bar -->
+        <div class="max-w-6xl w-full mx-auto flex items-center justify-between border-b border-slate-700/70 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded bg-sky-700 border border-sky-500/40 flex items-center justify-center text-white font-mono-num font-bold text-sm tracking-wider">
+                    WQ
                 </div>
-                <h2 id="authTitle" class="text-2xl font-bold text-slate-800">เข้าสู่ระบบ</h2>
-                <p class="text-xs text-slate-500 mt-1">Smart Sensor & IoT Control Platform</p>
-            </div>
-
-            <!-- Mode Selector Tabs -->
-            <div class="flex p-1 bg-slate-100 rounded-xl mb-6">
-                <button type="button" id="tabLogin" onclick="switchAuthTab('login')"
-                    class="flex-1 py-2 text-sm font-medium rounded-lg transition-all shadow-sm bg-white text-indigo-600">
-                    เข้าสู่ระบบ
-                </button>
-                <button type="button" id="tabRegister" onclick="switchAuthTab('register')"
-                    class="flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-800">
-                    สมัครสมาชิกใหม่
-                </button>
-            </div>
-
-            <div id="authMsgBox" class="hidden mb-4 p-3 rounded-xl text-sm border text-center transition"></div>
-
-            <form onsubmit="handleAuth(event)" class="space-y-4">
                 <div>
-                    <label id="authUsernameLabel" class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้งาน (Username)</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <i data-lucide="user" class="w-5 h-5"></i>
-                        </span>
-                        <input type="text" id="authUsername" required
-                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 text-sm transition"
-                            placeholder="กรอกชื่อผู้ใช้งานของคุณ">
+                    <div class="text-xs font-mono-num uppercase tracking-widest text-sky-400">Hydro-Telemetry &amp; Control System</div>
+                    <div class="text-sm font-semibold text-slate-200">ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ</div>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 text-xs font-mono-num text-slate-400">
+                <span>PROTOCOL: HTTPS/JSON</span>
+                <span class="text-slate-600">|</span>
+                <span>REV 3.2</span>
+            </div>
+        </div>
+
+        <!-- Center Login Module -->
+        <div class="my-auto py-8">
+            <div class="max-w-md w-full mx-auto bg-white rounded-md border border-slate-300 shadow-2xl overflow-hidden">
+                <!-- Top Accent Strip -->
+                <div class="h-1.5 bg-gradient-to-r from-sky-800 via-sky-600 to-teal-600"></div>
+
+                <div class="p-6 sm:p-8">
+                    <div class="mb-6">
+                        <div class="text-xs font-mono-num uppercase tracking-wider text-sky-700 font-semibold mb-1">Operator Authentication</div>
+                        <h2 id="authTitle" class="text-xl font-bold text-slate-900">เข้าสู่ระบบผู้ปฏิบัติงาน</h2>
+                        <p class="text-xs text-slate-500 mt-1">ยืนยันตัวตนเพื่อเข้าถึงแผงควบคุมสถานีตรวจวัดและสั่งการหน่วยบำบัด</p>
+                    </div>
+
+                    <!-- Mode Selector Tabs -->
+                    <div class="grid grid-cols-2 p-1 bg-slate-100 border border-slate-200 rounded mb-5">
+                        <button type="button" id="tabLogin" onclick="switchAuthTab('login')"
+                            class="py-2 text-xs font-semibold rounded-sm transition-all bg-slate-900 text-white shadow-sm">
+                            เข้าสู่ระบบ
+                        </button>
+                        <button type="button" id="tabRegister" onclick="switchAuthTab('register')"
+                            class="py-2 text-xs font-semibold rounded-sm transition-all text-slate-600 hover:text-slate-900">
+                            ลงทะเบียนผู้ใช้งานใหม่
+                        </button>
+                    </div>
+
+                    <div id="authMsgBox" class="hidden mb-4 p-3 rounded text-xs border transition"></div>
+
+                    <form onsubmit="handleAuth(event)" class="space-y-4">
+                        <div>
+                            <label id="authUsernameLabel" class="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">
+                                รหัสหรือชื่อผู้ปฏิบัติงาน (Operator ID / Username)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                </span>
+                                <input type="text" id="authUsername" required autocomplete="username"
+                                    class="w-full pl-9 pr-3.5 py-2.5 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-700 focus:border-sky-700 text-slate-900 text-sm font-medium transition"
+                                    placeholder="ระบุชื่อผู้ใช้งาน">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="authSubmitBtn"
+                            class="w-full py-2.5 px-4 rounded bg-sky-800 hover:bg-sky-900 text-white text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                            <span id="authSubmitText">เข้าสู่ระบบควบคุม</span>
+                        </button>
+                    </form>
+
+                    <div class="relative my-5">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                        <div class="relative flex justify-center text-[11px] text-slate-400 font-medium"><span class="bg-white px-2.5">สำหรับคณะกรรมการ / ทดสอบระบบ</span></div>
+                    </div>
+
+                    <!-- Evaluator / Demo Access Button -->
+                    <button type="button" onclick="quickGuestLogin()"
+                        class="w-full py-2.5 px-4 rounded border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition flex items-center justify-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-sky-700"></i>
+                        <span>เข้าใช้งานโหมดสาธิต (Demo / สำหรับคณะกรรมการ)</span>
+                    </button>
+
+                    <!-- Database Link Status Footer -->
+                    <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-center">
+                        <div id="apiStatus" class="text-[11px] font-mono-num text-slate-500">กำลังตรวจสอบสถานะการเชื่อมต่อฐานข้อมูล...</div>
                     </div>
                 </div>
-
-                <button type="submit" id="authSubmitBtn"
-                    class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg shadow-indigo-200 transition duration-200 flex items-center justify-center gap-2">
-                    <span id="authSubmitText">เข้าสู่ระบบ</span>
-                </button>
-            </form>
-
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
-                <div class="relative flex justify-center text-xs text-slate-400 uppercase"><span class="bg-white px-2">หรือ</span></div>
             </div>
+        </div>
 
-            <!-- Quick Guest Login Button -->
-            <button type="button" onclick="quickGuestLogin()"
-                class="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm transition flex items-center justify-center gap-2">
-                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
-                <span>เข้าใช้งานด่วน (Guest Mode ทันที)</span>
-            </button>
-
-            <!-- Google Sheets connection status -->
-            <div id="apiStatus" class="mt-5 text-xs text-center text-slate-400">⏳ กำลังตรวจสอบการเชื่อมต่อ Google Sheets...</div>
+        <!-- Bottom Institutional Footer -->
+        <div class="max-w-6xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 border-t border-slate-800 pt-4 gap-2">
+            <div>โครงงานระบบติดตามและควบคุมคุณภาพน้ำอัจฉริยะ (Smart Water Quality Monitoring &amp; Treatment System)</div>
+            <div class="font-mono-num text-[11px]">CLOUD TELEMETRY INTERFACE</div>
         </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- 2. MAIN DASHBOARD SCREEN                   -->
+    <!-- 2. MAIN TELEMETRY & CONTROL DASHBOARD      -->
     <!-- ========================================== -->
     <div id="dashboardScreen" class="hidden flex-1 flex flex-col">
-        <!-- Top Navbar -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100">
-                        <i data-lucide="activity" class="w-6 h-6"></i>
+
+        <!-- Top Command Header (Industrial Dark Navy) -->
+        <header class="bg-[#0B162C] text-white border-b-2 border-sky-600 sticky top-0 z-30 shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded bg-sky-700 border border-sky-400/30 flex items-center justify-center font-mono-num font-bold text-sm tracking-wider shadow-inner">
+                        WQ
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-slate-800 leading-tight">Smart Sensor Dashboard</h1>
-                        <div class="flex items-center gap-2 text-xs text-slate-500">
-                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
-                            <span>IoT Monitor & Control</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-mono-num uppercase tracking-widest text-sky-400 font-semibold">WATER QUALITY TELEMETRY &amp; PLC CONTROL</span>
                         </div>
+                        <h1 class="text-base sm:text-lg font-bold text-white leading-snug">
+                            ระบบตรวจวัดคุณภาพน้ำและควบคุมชุดบำบัดอัตโนมัติ
+                        </h1>
                     </div>
                 </div>
 
-                <!-- User Profile & Action Buttons -->
-                <div class="flex items-center gap-3">
-                    <div class="hidden sm:flex items-center gap-2 text-sm text-slate-600 bg-slate-100 py-1.5 px-3 rounded-lg">
-                        <i data-lucide="user-check" class="w-4 h-4 text-indigo-600"></i>
-                        <span>ผู้ใช้งาน:</span>
-                        <strong id="displayUsername" class="text-slate-800 font-semibold">User</strong>
+                <!-- Right Status & Operator Controls -->
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <!-- Live Clock -->
+                    <div class="hidden lg:flex items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded text-xs font-mono-num text-slate-200">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span id="systemClock">--:--:--</span>
+                    </div>
+
+                    <!-- Operator Badge -->
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-800/90 border border-slate-700 py-1.5 px-3 rounded text-xs">
+                        <span class="text-slate-400">ผู้ปฏิบัติงาน:</span>
+                        <strong id="displayUsername" class="text-white font-semibold font-mono-num">OPERATOR</strong>
                     </div>
 
                     <button onclick="openAddMachineModal()"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg transition">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">เพิ่ม Machine ID</span>
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-700 hover:bg-sky-600 border border-sky-500/40 rounded transition">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>ลงทะเบียนสถานีใหม่</span>
                     </button>
 
                     <button onclick="logout()" title="ออกจากระบบ"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700 rounded transition">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
                         <span class="hidden sm:inline">ออกจากระบบ</span>
                     </button>
                 </div>
@@ -171,254 +231,353 @@
         </header>
 
         <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
-            
-            <!-- Machine Selector & Date Filter Card -->
-            <div class="glass-card rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <label class="text-sm font-medium text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                        <i data-lucide="cpu" class="w-4 h-4 text-slate-500"></i>
-                        Machine ID:
-                    </label>
-                    <div class="flex items-center gap-2 flex-1 sm:flex-initial">
-                        <input type="text" id="machineIdInput" placeholder="กรอกรหัสเครื่อง"
-                            class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44">
+
+            <!-- SECTION 1: STATION CONNECTION & TELEMETRY STATUS BAR -->
+            <div class="panel-card p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">หมายเลขสถานี / Machine ID:</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="machineIdInput" placeholder="ระบุรหัสเครื่อง เช่น ESP32-01"
+                            class="px-3 py-1.5 text-sm font-mono-num font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-700 focus:border-sky-700 w-48 bg-slate-50 text-slate-900">
                         <button onclick="bindMachine()"
-                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">
-                            เชื่อมต่อ
+                            class="px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded transition flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-3.5 h-3.5"></i>
+                            <span>เชื่อมต่อสถานี</span>
                         </button>
                     </div>
-                    <span id="connectionBadge" class="hidden px-2.5 py-1 text-xs rounded-full font-medium"></span>
-                    <span id="lastUpdated" class="text-xs text-slate-400">ยังไม่ได้เชื่อมต่อเครื่อง</span>
+                    <span id="connectionBadge" class="hidden px-2.5 py-1 text-xs rounded font-mono-num font-medium"></span>
                 </div>
 
-                <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                    <label class="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                        <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
-                        วันที่ดูกราฟ:
-                    </label>
-                    <input type="date" id="datePicker" onchange="fetchHistory()"
-                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                </div>
-            </div>
-
-            <!-- Hardware Control Switches (4 Controls) -->
-            <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
-                        <i data-lucide="sliders" class="w-5 h-5 text-indigo-600"></i>
-                        ควบคุมรีเลย์ & อุปกรณ์ (Hardware Switches)
-                    </h2>
-                    <span class="text-xs text-slate-500">สั่งงานแบบ Real-time ไปยังบอร์ด</span>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Control 1: Motor 1 -->
-                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                <i data-lucide="cog" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-slate-800 text-sm">Motor 1</h3>
-                                <p class="text-xs text-slate-400">คำสั่งรหัส '1'</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
+                <div class="flex flex-wrap items-center justify-between lg:justify-end gap-4 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-200 text-xs">
+                    <div class="flex items-center gap-2 text-slate-600">
+                        <span class="text-slate-400">ความถี่ซิงค์ข้อมูล:</span>
+                        <span class="font-mono-num font-semibold text-slate-700">3.0 วินาที</span>
                     </div>
-
-                    <!-- Control 2: Motor 2 -->
-                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                                <i data-lucide="cog" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-slate-800 text-sm">Motor 2</h3>
-                                <p class="text-xs text-slate-400">คำสั่งรหัส '2'</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
-                    </div>
-
-                    <!-- Control 3: Pump 1 -->
-                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
-                                <i data-lucide="droplet" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-slate-800 text-sm">Pump 1</h3>
-                                <p class="text-xs text-slate-400">คำสั่งรหัส '3'</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="pump1Toggle" onchange="toggleDevice('pump1Toggle', '3')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
-                    </div>
-
-                    <!-- Control 4: Pump 2 -->
-                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center">
-                                <i data-lucide="droplets" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-slate-800 text-sm">Pump 2</h3>
-                                <p class="text-xs text-slate-400">คำสั่งรหัส '4'</p>
-                            </div>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <div class="flex items-center gap-1.5 font-mono-num text-slate-600">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span id="lastUpdated">สถานะ: รอการระบุหมายเลขสถานี</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Sensor Monitoring Cards & Charts Grid -->
-            <div class="space-y-6">
-                
-                <!-- 1. Temperature Card -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
+            <!-- SECTION 2: REAL-TIME SENSOR TELEMETRY SUMMARY (3 KPI MODULES) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                <!-- KPI 1: Water Temperature -->
+                <div class="panel-card overflow-hidden flex flex-col justify-between">
+                    <div class="h-1 bg-orange-600"></div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="text-[11px] font-mono-num uppercase tracking-wider text-slate-400 font-semibold">PARAMETER 01 // TEMP</div>
+                                <h3 class="text-sm font-bold text-slate-800 mt-0.5">อุณหภูมิน้ำ (Water Temperature)</h3>
+                            </div>
+                            <span id="tempStatus" class="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">รอรับข้อมูล</span>
+                        </div>
+
+                        <div class="my-5 flex items-baseline gap-2">
+                            <span id="tempCurrent" class="text-4xl font-bold font-mono-num text-slate-900 tracking-tight">--</span>
+                            <span class="text-sm font-mono-num font-semibold text-slate-500">°C</span>
+                        </div>
+
                         <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
-                                    <i data-lucide="thermometer" class="w-4 h-4"></i>
-                                </div>
-                                <h3 class="text-base font-semibold text-slate-800">Temperature (°C)</h3>
+                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2 border border-slate-200">
+                                <div id="tempBar" class="h-full bg-orange-600 transition-all duration-300" style="width: 0%"></div>
                             </div>
-                            <p class="text-xs text-slate-500">อุณหภูมิปัจจุบัน</p>
-                        </div>
-                        <div class="my-4">
-                            <div class="flex items-baseline gap-2">
-                                <span id="tempCurrent" class="text-4xl font-bold text-rose-600">--</span>
-                                <span class="text-lg text-slate-400">°C</span>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono-num">
+                                <span>เกณฑ์ปกติ: &lt; 35.0 °C</span>
+                                <span>วิกฤต: &gt; 40.0 °C</span>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-slate-500">สถานะ:</span>
-                            <span id="tempStatus" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2 h-56 relative">
-                        <canvas id="tempChart"></canvas>
                     </div>
                 </div>
 
-                <!-- 2. pH Level Card -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
+                <!-- KPI 2: pH Level -->
+                <div class="panel-card overflow-hidden flex flex-col justify-between">
+                    <div class="h-1 bg-sky-600"></div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="text-[11px] font-mono-num uppercase tracking-wider text-slate-400 font-semibold">PARAMETER 02 // pH LEVEL</div>
+                                <h3 class="text-sm font-bold text-slate-800 mt-0.5">ความเป็นกรด-ด่าง (pH Balance)</h3>
+                            </div>
+                            <span id="phStatus" class="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">รอรับข้อมูล</span>
+                        </div>
+
+                        <div class="my-5 flex items-baseline gap-2">
+                            <span id="phCurrent" class="text-4xl font-bold font-mono-num text-slate-900 tracking-tight">--</span>
+                            <span class="text-sm font-mono-num font-semibold text-slate-500">pH</span>
+                        </div>
+
                         <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center">
-                                    <i data-lucide="flask-conical" class="w-4 h-4"></i>
-                                </div>
-                                <h3 class="text-base font-semibold text-slate-800">pH Level</h3>
+                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2 border border-slate-200">
+                                <div id="phBar" class="h-full bg-sky-600 transition-all duration-300" style="width: 0%"></div>
                             </div>
-                            <p class="text-xs text-slate-500">ค่าความเป็นกรด-ด่าง</p>
-                        </div>
-                        <div class="my-4">
-                            <div class="flex items-baseline gap-2">
-                                <span id="phCurrent" class="text-4xl font-bold text-blue-600">--</span>
-                                <span class="text-lg text-slate-400">pH</span>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono-num">
+                                <span>เกณฑ์ปกติ: 5.50 – 7.50 pH</span>
+                                <span>วิกฤต: &lt; 4.0 / &gt; 9.0</span>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-slate-500">สถานะ:</span>
-                            <span id="phStatus" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2 h-56 relative">
-                        <canvas id="phChart"></canvas>
                     </div>
                 </div>
 
-                <!-- 3. EC Level Card -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
+                <!-- KPI 3: EC Conductivity -->
+                <div class="panel-card overflow-hidden flex flex-col justify-between">
+                    <div class="h-1 bg-emerald-600"></div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="text-[11px] font-mono-num uppercase tracking-wider text-slate-400 font-semibold">PARAMETER 03 // CONDUCTIVITY</div>
+                                <h3 class="text-sm font-bold text-slate-800 mt-0.5">ค่าการนำไฟฟ้า (EC Level)</h3>
+                            </div>
+                            <span id="ecStatus" class="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">รอรับข้อมูล</span>
+                        </div>
+
+                        <div class="my-5 flex items-baseline gap-2">
+                            <span id="ecCurrent" class="text-4xl font-bold font-mono-num text-slate-900 tracking-tight">--</span>
+                            <span class="text-sm font-mono-num font-semibold text-slate-500">mS/cm</span>
+                        </div>
+
                         <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                                    <i data-lucide="zap" class="w-4 h-4"></i>
-                                </div>
-                                <h3 class="text-base font-semibold text-slate-800">EC Level</h3>
+                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2 border border-slate-200">
+                                <div id="ecBar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 0%"></div>
                             </div>
-                            <p class="text-xs text-slate-500">ค่าการนำไฟฟ้า / ธาตุอาหาร</p>
-                        </div>
-                        <div class="my-4">
-                            <div class="flex items-baseline gap-2">
-                                <span id="ecCurrent" class="text-4xl font-bold text-emerald-600">--</span>
-                                <span class="text-lg text-slate-400">mS/cm</span>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono-num">
+                                <span>เกณฑ์ปกติ: &le; 2.00 mS/cm</span>
+                                <span>วิกฤต: &gt; 3.00 mS/cm</span>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-slate-500">สถานะ:</span>
-                            <span id="ecStatus" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">รอข้อมูล</span>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2 h-56 relative">
-                        <canvas id="ecChart"></canvas>
                     </div>
                 </div>
 
             </div>
+
+            <!-- SECTION 3: ACTUATOR & RELAY CONTROL PANEL (4 CHANNELS) -->
+            <div class="panel-card">
+                <div class="panel-header flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="Sliders" class="w-4 h-4 text-sky-700"></i>
+                        <h2 class="text-sm font-bold text-slate-800">แผงควบคุมชุดขับเคลื่อนและปั๊มบำบัด (Actuator &amp; Relay Control Unit)</h2>
+                    </div>
+                    <span class="text-[11px] font-mono-num text-slate-500">4-CHANNEL DIGITAL RELAY INTERFACE</span>
+                </div>
+
+                <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    <!-- Channel 1: Motor 1 -->
+                    <div class="border border-slate-200 rounded bg-slate-50/60 p-4 flex flex-col justify-between gap-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-[10px] font-mono-num font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">CH-01 // CMD '1'</span>
+                                <h3 class="font-bold text-slate-900 text-sm mt-2">Motor 1 (ชุดขับเคลื่อน 1)</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">มอเตอร์กวน/ระบบกลไกชุดที่ 1</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="motor1Led" class="led-dot led-standby"></span>
+                                <span id="motor1StateText" class="text-xs font-mono-num font-semibold text-slate-500">STANDBY (OFF)</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-sm after:h-4.5 after:w-4.5 after:w-[18px] after:h-[18px] after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Channel 2: Motor 2 -->
+                    <div class="border border-slate-200 rounded bg-slate-50/60 p-4 flex flex-col justify-between gap-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-[10px] font-mono-num font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">CH-02 // CMD '2'</span>
+                                <h3 class="font-bold text-slate-900 text-sm mt-2">Motor 2 (ชุดขับเคลื่อน 2)</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">มอเตอร์กวน/ระบบกลไกชุดที่ 2</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="motor2Led" class="led-dot led-standby"></span>
+                                <span id="motor2StateText" class="text-xs font-mono-num font-semibold text-slate-500">STANDBY (OFF)</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-sm after:w-[18px] after:h-[18px] after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Channel 3: Pump 1 -->
+                    <div class="border border-slate-200 rounded bg-slate-50/60 p-4 flex flex-col justify-between gap-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-[10px] font-mono-num font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">CH-03 // CMD '3'</span>
+                                <h3 class="font-bold text-slate-900 text-sm mt-2">Pump 1 (ปั๊มจ่ายชุดที่ 1)</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">ปั๊มสูบจ่ายน้ำ/สารปรับสภาพ 1</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="pump1Led" class="led-dot led-standby"></span>
+                                <span id="pump1StateText" class="text-xs font-mono-num font-semibold text-slate-500">STANDBY (OFF)</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="pump1Toggle" onchange="toggleDevice('pump1Toggle', '3')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-sm after:w-[18px] after:h-[18px] after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Channel 4: Pump 2 -->
+                    <div class="border border-slate-200 rounded bg-slate-50/60 p-4 flex flex-col justify-between gap-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-[10px] font-mono-num font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">CH-04 // CMD '4'</span>
+                                <h3 class="font-bold text-slate-900 text-sm mt-2">Pump 2 (ปั๊มจ่ายชุดที่ 2)</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">ปั๊มสูบจ่ายน้ำ/สารปรับสภาพ 2</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="pump2Led" class="led-dot led-standby"></span>
+                                <span id="pump2StateText" class="text-xs font-mono-num font-semibold text-slate-500">STANDBY (OFF)</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-sm after:w-[18px] after:h-[18px] after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 4: HISTORICAL TELEMETRY & TIME-SERIES CHARTS -->
+            <div class="panel-card">
+                <div class="panel-header flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800">กราฟวิเคราะห์แนวโน้มคุณภาพน้ำตามช่วงเวลา (Time-Series Telemetry Log)</h2>
+                        <p class="text-xs text-slate-500">ข้อมูลบันทึกจากฐานข้อมูลสถานีตรวจวัด แยกตามพารามิเตอร์</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <span id="historyCount" class="text-xs font-mono-num text-slate-500 bg-white border border-slate-200 px-2.5 py-1 rounded">
+                            ข้อมูล: 0 รายการ
+                        </span>
+
+                        <div class="flex items-center gap-1.5 bg-white border border-slate-300 rounded px-2.5 py-1">
+                            <label class="text-xs font-semibold text-slate-600">วันที่บันทึก:</label>
+                            <input type="date" id="datePicker" onchange="fetchHistory()"
+                                class="text-xs font-mono-num text-slate-800 focus:outline-none bg-transparent">
+                        </div>
+
+                        <button type="button" onclick="exportCsv()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5 text-sky-700"></i>
+                            <span>ส่งออก CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-5 space-y-6">
+
+                    <!-- Chart 1: Temperature -->
+                    <div class="border border-slate-200 rounded p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-sm bg-orange-600 inline-block"></span>
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-800">แนวโน้มอุณหภูมิน้ำ — Temperature (°C)</h3>
+                            </div>
+                            <div id="tempStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="tempChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: pH -->
+                    <div class="border border-slate-200 rounded p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-sm bg-sky-600 inline-block"></span>
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-800">แนวโน้มค่าความเป็นกรด-ด่าง — pH Balance (pH)</h3>
+                            </div>
+                            <div id="phStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="phChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: EC -->
+                    <div class="border border-slate-200 rounded p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-sm bg-emerald-600 inline-block"></span>
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-800">แนวโน้มค่าการนำไฟฟ้า — Electrical Conductivity (mS/cm)</h3>
+                            </div>
+                            <div id="ecStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="ecChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         </main>
 
         <!-- Footer -->
-        <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-            Smart Sensor Dashboard • Powered by Google Sheets & Vercel
+        <footer class="bg-white border-t border-slate-300 py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div>ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ (Water Quality Telemetry &amp; Automated Control System)</div>
+                <div class="font-mono-num text-[11px] text-slate-400">REAL-TIME CLOUD DATA ACQUISITION</div>
+            </div>
         </footer>
     </div>
 
     <!-- ========================================== -->
-    <!-- 3. ADD MACHINE MODAL                       -->
+    <!-- 3. REGISTER NEW STATION MODAL              -->
     <!-- ========================================== -->
-    <div id="addMachineModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
-                    เพิ่ม Machine ID ใหม่
-                </h3>
-                <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+    <div id="addMachineModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-md border border-slate-300 shadow-2xl overflow-hidden">
+            <div class="panel-header flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-800">ลงทะเบียนสถานีตรวจวัดใหม่ (Register Telemetry Node)</h3>
+                <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-700">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
-            <p class="text-xs text-slate-500">ลงทะเบียนเครื่องจักรหรือบอร์ดไมโครคอนโทรลเลอร์เข้ากับบัญชีนี้</p>
-            
-            <form onsubmit="submitNewMachine(event)" class="space-y-4">
-                <input type="text" id="newMachineIdInput" required placeholder="ตัวอย่าง: ESP32-01"
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm">
-                
-                <div class="flex gap-2">
+
+            <form onsubmit="submitNewMachine(event)" class="p-5 space-y-4">
+                <p class="text-xs text-slate-600">ระบุรหัสประจำตัวบอร์ดไมโครคอนโทรลเลอร์ (Machine ID) เพื่อผูกเข้ากับบัญชีผู้ปฏิบัติงานและสร้างตารางสถานะเริ่มต้น</p>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเลขสถานี / Machine ID</label>
+                    <input type="text" id="newMachineIdInput" required placeholder="เช่น STATION-01 หรือ ESP32-A1"
+                        class="w-full px-3.5 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-700 text-slate-900 font-mono-num text-sm">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closeAddMachineModal()"
-                        class="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium transition">
+                        class="py-2 px-4 rounded border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition">
                         ยกเลิก
                     </button>
                     <button type="submit" id="addMachineBtn"
-                        class="flex-1 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition shadow-sm">
-                        เพิ่มเครื่อง
+                        class="py-2 px-4 rounded bg-sky-800 hover:bg-sky-900 text-white text-xs font-semibold transition">
+                        บันทึกและเชื่อมต่อสถานี
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Load Application Logic -->
-    <script src="js/config.js?v=3"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/config.js?v=4"></script>
+    <script src="js/app.js?v=4"></script>
     <script>
-        // Render lucide icons
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>
-

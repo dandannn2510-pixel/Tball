@@ -1,5 +1,5 @@
 // ========================================================
-// Smart Sensor & Control Dashboard - Main Application
+// Water Quality Telemetry & Control System - Application Logic
 // ========================================================
 
 let currentMachine = '';
@@ -7,19 +7,20 @@ let pollTimer = null;
 let historyTimer = null;
 let charts = {};
 let isLoginMode = true;
-let apiBase = null;              // endpoint ที่ใช้งานได้จริง (proxy หรือ GAS ตรง)
+let apiBase = null;
 let machineNotFoundWarned = false;
-const switchLocks = {};          // { elementId: timestamp } กันค่าจาก Sheet ทับสวิตช์ที่เพิ่งกด
+let lastHistoryRecords = [];
+const switchLocks = {};
 
 const DEVICES = [
-    { id: 'motor1Toggle', code: '1', name: 'Motor 1', field: 'motor1_command' },
-    { id: 'motor2Toggle', code: '2', name: 'Motor 2', field: 'motor2_command' },
-    { id: 'pump1Toggle',  code: '3', name: 'Pump 1',  field: 'pump1_command' },
-    { id: 'pump2Toggle',  code: '4', name: 'Pump 2',  field: 'pump2_command' }
+    { id: 'motor1Toggle', code: '1', name: 'Motor 1', field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
+    { id: 'motor2Toggle', code: '2', name: 'Motor 2', field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
+    { id: 'pump1Toggle',  code: '3', name: 'Pump 1',  field: 'pump1_command',  ledId: 'pump1Led',  textId: 'pump1StateText' },
+    { id: 'pump2Toggle',  code: '4', name: 'Pump 2',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
 ];
 
 // ========================================================
-// API Layer (ตรวจหา endpoint ที่ใช้ได้อัตโนมัติ)
+// API Layer
 // ========================================================
 async function fetchWithTimeout(url, options = {}, timeoutMs = CONFIG.REQUEST_TIMEOUT_MS) {
     const controller = new AbortController();
@@ -34,7 +35,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = CONFIG.REQUEST_TI
 async function tryEndpoint(base) {
     const res = await fetchWithTimeout(`${base}?action=ping`, { method: 'GET' }, 20000);
     const text = await res.text();
-    JSON.parse(text); // GAS ตอบ JSON เสมอ ถ้า parse ไม่ได้ = endpoint นี้ใช้ไม่ได้
+    JSON.parse(text);
     return true;
 }
 
@@ -49,13 +50,12 @@ async function resolveApiBase(force = false) {
         try {
             await tryEndpoint(base);
             apiBase = base;
-            console.log('[API] using endpoint:', base);
             return apiBase;
         } catch (err) {
-            console.warn('[API] endpoint failed:', base, err);
+            console.warn('[API] endpoint fallback:', base, err);
         }
     }
-    throw new Error('ไม่สามารถเชื่อมต่อ Google Sheets ได้ (ตรวจสอบอินเทอร์เน็ต หรือการ Deploy Apps Script)');
+    throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูล Google Sheets ได้');
 }
 
 async function callApi(action, params = {}, method = 'GET') {
@@ -74,14 +74,13 @@ async function callApi(action, params = {}, method = 'GET') {
     try {
         return JSON.parse(text);
     } catch (e) {
-        console.error('[API] non-JSON response:', text.slice(0, 300));
-        apiBase = null; // บังคับตรวจ endpoint ใหม่ครั้งหน้า
-        throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ไม่ใช่ JSON)');
+        apiBase = null;
+        throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');
     }
 }
 
 // ========================================================
-// Init
+// Initialization
 // ========================================================
 document.addEventListener('DOMContentLoaded', () => {
     const datePicker = document.getElementById('datePicker');
@@ -92,23 +91,36 @@ document.addEventListener('DOMContentLoaded', () => {
         machineInput.addEventListener('keydown', e => { if (e.key === 'Enter') bindMachine(); });
     }
 
+    startSystemClock();
     checkLoginStatus();
     checkApiStatus();
     if (window.lucide) lucide.createIcons();
 });
 
+function startSystemClock() {
+    const updateClock = () => {
+        const el = document.getElementById('systemClock');
+        if (!el) return;
+        const now = new Date();
+        el.innerText = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) +
+            ' | ' + now.toLocaleTimeString('th-TH', { hour12: false });
+    };
+    updateClock();
+    setInterval(updateClock, 1000);
+}
+
 async function checkApiStatus() {
     const el = document.getElementById('apiStatus');
     if (!el) return;
-    el.className = 'mt-5 text-xs text-center text-slate-400';
-    el.innerText = '⏳ กำลังตรวจสอบการเชื่อมต่อ Google Sheets...';
+    el.className = 'text-[11px] font-mono-num text-slate-500 flex items-center gap-2';
+    el.innerHTML = '<span class="led-dot led-standby"></span><span>สถานะฐานข้อมูล: กำลังตรวจสอบการเชื่อมต่อ...</span>';
     try {
-        const base = await resolveApiBase(true);
-        el.className = 'mt-5 text-xs text-center text-emerald-600';
-        el.innerText = `🟢 เชื่อมต่อ Google Sheets สำเร็จ (${base === CONFIG.PROXY_URL ? 'ผ่าน Server Proxy' : 'ผ่าน Apps Script โดยตรง'})`;
+        await resolveApiBase(true);
+        el.className = 'text-[11px] font-mono-num text-emerald-700 font-medium flex items-center gap-2';
+        el.innerHTML = '<span class="led-dot led-online"></span><span>สถานะฐานข้อมูล: เชื่อมต่อพร้อมใช้งาน (ONLINE)</span>';
     } catch (err) {
-        el.className = 'mt-5 text-xs text-center text-rose-600';
-        el.innerHTML = `🔴 ${escapeHtml(err.message)} <button type="button" onclick="checkApiStatus()" class="underline font-semibold ml-1">ลองใหม่</button>`;
+        el.className = 'text-[11px] font-mono-num text-rose-700 flex items-center gap-2';
+        el.innerHTML = `<span class="led-dot led-error"></span><span>${escapeHtml(err.message)}</span> <button type="button" onclick="checkApiStatus()" class="underline font-semibold ml-1">ตรวจสอบใหม่</button>`;
     }
 }
 
@@ -134,13 +146,13 @@ function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
-    const colors = {
-        success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-        error: 'bg-rose-50 border-rose-200 text-rose-800',
-        info: 'bg-indigo-50 border-indigo-200 text-indigo-800'
+    const styles = {
+        success: 'bg-slate-900 border-l-4 border-emerald-500 text-white',
+        error: 'bg-slate-900 border-l-4 border-rose-500 text-white',
+        info: 'bg-slate-900 border-l-4 border-sky-500 text-white'
     };
     const toast = document.createElement('div');
-    toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border text-sm transition-all duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+    toast.className = `pointer-events-auto px-4 py-3 rounded shadow-lg text-xs font-medium transition-all duration-300 translate-y-2 opacity-0 ${styles[type] || styles.info}`;
     toast.innerText = message;
     container.appendChild(toast);
 
@@ -155,11 +167,11 @@ function showAuthMessage(html, type = 'error') {
     const box = document.getElementById('authMsgBox');
     if (!box) return;
     const styles = {
-        error: 'bg-rose-50 text-rose-700 border-rose-200',
-        success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        info: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+        error: 'bg-rose-50 text-rose-800 border-rose-300',
+        success: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+        info: 'bg-sky-50 text-sky-800 border-sky-300'
     };
-    box.className = `mb-4 p-3 rounded-xl text-sm border text-center ${styles[type] || styles.error}`;
+    box.className = `mb-4 p-3 rounded text-xs border text-center ${styles[type] || styles.error}`;
     box.innerHTML = html;
 }
 
@@ -169,7 +181,7 @@ function hideAuthMessage() {
 }
 
 // ========================================================
-// Auth (Login / Register / Guest / Logout)
+// Authentication
 // ========================================================
 function checkLoginStatus() {
     const userId = localStorage.getItem('userID');
@@ -196,12 +208,14 @@ function checkLoginStatus() {
 
 function switchAuthTab(mode) {
     isLoginMode = (mode === 'login');
-    const active = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all shadow-sm bg-white text-indigo-600';
-    const inactive = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-800';
+    const active = 'py-2 text-xs font-semibold rounded-sm transition-all bg-slate-900 text-white shadow-sm';
+    const inactive = 'py-2 text-xs font-semibold rounded-sm transition-all text-slate-600 hover:text-slate-900';
 
-    document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิกใหม่';
-    document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'ยืนยันการสมัครสมาชิก';
-    document.getElementById('authUsernameLabel').innerText = isLoginMode ? 'ชื่อผู้ใช้งาน (Username)' : 'ตั้งชื่อผู้ใช้งานใหม่ (New Username)';
+    document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่ระบบผู้ปฏิบัติงาน' : 'ลงทะเบียนผู้ปฏิบัติงานใหม่';
+    document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่ระบบควบคุม' : 'ยืนยันการลงทะเบียน';
+    document.getElementById('authUsernameLabel').innerText = isLoginMode
+        ? 'รหัสหรือชื่อผู้ปฏิบัติงาน (Operator ID / Username)'
+        : 'กำหนดชื่อผู้ปฏิบัติงานใหม่ (New Operator ID)';
     document.getElementById('tabLogin').className = isLoginMode ? active : inactive;
     document.getElementById('tabRegister').className = isLoginMode ? inactive : active;
     hideAuthMessage();
@@ -217,7 +231,7 @@ function setAuthLoading(loading, text) {
     btn.disabled = loading;
     btn.classList.toggle('opacity-70', loading);
     btn.classList.toggle('cursor-wait', loading);
-    label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่ระบบ' : 'ยืนยันการสมัครสมาชิก');
+    label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่ระบบควบคุม' : 'ยืนยันการลงทะเบียน');
 }
 
 function completeLogin(userId, username) {
@@ -225,7 +239,7 @@ function completeLogin(userId, username) {
     localStorage.setItem('username', String(username));
     document.getElementById('authUsername').value = '';
     hideAuthMessage();
-    showToast(`ยินดีต้อนรับคุณ ${username}`, 'success');
+    showToast(`เข้าสู่ระบบสำเร็จ — ผู้ปฏิบัติงาน: ${username}`, 'success');
     checkLoginStatus();
 }
 
@@ -234,7 +248,7 @@ async function handleAuth(event) {
 
     const username = document.getElementById('authUsername').value.trim();
     if (!username) {
-        showAuthMessage('กรุณากรอกชื่อผู้ใช้งาน');
+        showAuthMessage('กรุณาระบุชื่อผู้ปฏิบัติงาน');
         return;
     }
 
@@ -242,19 +256,19 @@ async function handleAuth(event) {
 
     try {
         if (isLoginMode) {
-            setAuthLoading(true, 'กำลังเข้าสู่ระบบ...');
+            setAuthLoading(true, 'กำลังตรวจสอบสิทธิ์...');
             const data = await callApi('login_user', { username }, 'POST');
 
             if (data.status === 'success') {
                 completeLogin(data.user_id, data.username);
             } else {
-                const msg = escapeHtml(data.message || 'เข้าสู่ระบบไม่สำเร็จ');
+                const msg = escapeHtml(data.message || 'ไม่พบบัญชีผู้ใช้งานนี้');
                 const safeName = escapeHtml(username).replace(/'/g, '&#39;');
                 showAuthMessage(
                     `<div>${msg}</div>
                      <button type="button" onclick="registerAndLogin('${safeName}')"
-                        class="mt-2 text-indigo-600 hover:text-indigo-800 font-semibold underline text-xs">
-                        👉 สมัครสมาชิกด้วยชื่อ "${safeName}" แล้วเข้าสู่ระบบทันที
+                        class="mt-2 text-sky-800 hover:text-sky-950 font-semibold underline text-xs">
+                        คลิกที่นี่เพื่อลงทะเบียนชื่อ "${safeName}" และเข้าสู่ระบบทันที
                      </button>`
                 );
             }
@@ -262,8 +276,7 @@ async function handleAuth(event) {
             await registerAndLogin(username);
         }
     } catch (err) {
-        console.error('Auth error:', err);
-        showAuthMessage(`เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.name === 'AbortError' ? 'หมดเวลาการเชื่อมต่อ (Apps Script ตอบช้า) ลองใหม่อีกครั้ง' : err.message)}`);
+        showAuthMessage(`การเชื่อมต่อขัดข้อง: ${escapeHtml(err.name === 'AbortError' ? 'หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง' : err.message)}`);
     } finally {
         setAuthLoading(false);
     }
@@ -271,12 +284,11 @@ async function handleAuth(event) {
 
 async function registerAndLogin(username) {
     hideAuthMessage();
-    setAuthLoading(true, 'กำลังสมัครสมาชิก...');
+    setAuthLoading(true, 'กำลังบันทึกข้อมูลผู้ใช้งาน...');
     try {
         const reg = await callApi('register_user', { username }, 'POST');
-        // ถ้าชื่อซ้ำ ก็ลองเข้าสู่ระบบด้วยชื่อนั้นต่อเลย
         if (reg.status !== 'success' && !(reg.message || '').includes('มีคนใช้แล้ว')) {
-            showAuthMessage(escapeHtml(reg.message || 'สมัครสมาชิกไม่สำเร็จ'));
+            showAuthMessage(escapeHtml(reg.message || 'ไม่สามารถลงทะเบียนได้'));
             return;
         }
 
@@ -287,19 +299,17 @@ async function registerAndLogin(username) {
         } else {
             isLoginMode = true;
             switchAuthTab('login');
-            showAuthMessage('สมัครสมาชิกสำเร็จ! กรุณากด "เข้าสู่ระบบ" อีกครั้ง', 'success');
+            showAuthMessage('ลงทะเบียนสำเร็จ กรุณากดเข้าสู่ระบบ', 'success');
         }
     } catch (err) {
-        console.error('Register error:', err);
-        showAuthMessage(`เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.message)}`);
+        showAuthMessage(`การเชื่อมต่อขัดข้อง: ${escapeHtml(err.message)}`);
     } finally {
         setAuthLoading(false);
     }
 }
 
 function quickGuestLogin() {
-    const guestUser = 'Guest_' + Math.floor(1000 + Math.random() * 9000);
-    completeLogin('guest', guestUser);
+    completeLogin('DEMO', 'EVALUATOR_DEMO');
 }
 
 function logout() {
@@ -314,12 +324,12 @@ function logout() {
     if (badge) badge.className = 'hidden';
     resetDashboard();
 
-    showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
+    showToast('ออกจากระบบควบคุมเรียบร้อยแล้ว', 'info');
     checkLoginStatus();
 }
 
 // ========================================================
-// Machine Connection & Registration
+// Station Binding & Registration
 // ========================================================
 function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
@@ -331,11 +341,20 @@ function stopPolling() {
 function resetDashboard() {
     ['tempCurrent', 'phCurrent', 'ecCurrent'].forEach(id => document.getElementById(id).innerText = '--');
     ['tempStatus', 'phStatus', 'ecStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
-    DEVICES.forEach(d => document.getElementById(d.id).checked = false);
+    ['tempBar', 'phBar', 'ecBar'].forEach(id => {
+        const bar = document.getElementById(id);
+        if (bar) bar.style.width = '0%';
+    });
+    DEVICES.forEach(d => {
+        const el = document.getElementById(d.id);
+        if (el) el.checked = false;
+        updateDeviceIndicator(d, false);
+    });
     Object.values(charts).forEach(c => c.destroy());
     charts = {};
+    lastHistoryRecords = [];
     const lu = document.getElementById('lastUpdated');
-    if (lu) lu.innerText = 'ยังไม่ได้เชื่อมต่อเครื่อง';
+    if (lu) lu.innerText = 'สถานะ: รอการระบุหมายเลขสถานี';
 }
 
 function bindMachine(targetId, silent = false) {
@@ -343,7 +362,7 @@ function bindMachine(targetId, silent = false) {
     const machineId = String(targetId || input.value || '').trim();
 
     if (!machineId) {
-        showToast('กรุณากรอก Machine ID', 'error');
+        showToast('กรุณาระบุหมายเลขสถานี (Machine ID)', 'error');
         return;
     }
 
@@ -354,10 +373,10 @@ function bindMachine(targetId, silent = false) {
     localStorage.setItem('currentMachine', currentMachine);
 
     const badge = document.getElementById('connectionBadge');
-    badge.innerText = `กำลังเชื่อมต่อ ${currentMachine}...`;
-    badge.className = 'px-2.5 py-1 text-xs rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200 inline-block';
+    badge.innerText = `CONNECTING: ${currentMachine}`;
+    badge.className = 'px-2.5 py-1 text-xs rounded font-mono-num font-semibold bg-amber-50 text-amber-800 border border-amber-300 inline-block';
 
-    if (!silent) showToast(`กำลังดึงข้อมูลจาก ${currentMachine}...`, 'info');
+    if (!silent) showToast(`กำลังซิงค์ข้อมูลสถานี ${currentMachine}...`, 'info');
 
     fetchCurrentData();
     fetchHistory();
@@ -393,22 +412,20 @@ async function submitNewMachine(event) {
     try {
         const data = await callApi('add_machine', {
             machine_id: newId,
-            user_id: localStorage.getItem('userID') || ''
+            user_id: localStorage.getItem('userID') || '1'
         }, 'POST');
 
         if (data.status === 'success') {
-            showToast(`เพิ่ม Machine ID "${newId}" สำเร็จ!`, 'success');
+            showToast(`ลงทะเบียนสถานี "${newId}" สำเร็จ`, 'success');
         } else {
-            showToast(data.message || 'ไม่สามารถเพิ่ม Machine ID ได้', 'error');
+            showToast(data.message || 'ไม่สามารถลงทะเบียนสถานีได้', 'error');
             if (!(data.message || '').includes('ลงทะเบียนไปแล้ว')) return;
         }
-        // เพิ่มสำเร็จ หรือมีอยู่แล้ว -> เชื่อมต่อเลย
         closeAddMachineModal();
         document.getElementById('machineIdInput').value = newId;
         bindMachine(newId, true);
     } catch (err) {
-        console.error('Add machine error:', err);
-        showToast(`เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
+        showToast(`การเชื่อมต่อขัดข้อง: ${err.message}`, 'error');
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
@@ -416,17 +433,17 @@ async function submitNewMachine(event) {
 }
 
 // ========================================================
-// Real-time Data & Status
+// Real-time Telemetry Polling & Evaluation
 // ========================================================
 function evaluateStatus(type, value) {
-    const none = { text: 'รอข้อมูล', badgeClass: 'bg-slate-100 text-slate-500' };
+    const none = { text: 'รอรับข้อมูล', badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200' };
     if (value === null || value === undefined || value === '' || isNaN(parseFloat(value))) return none;
 
     const num = parseFloat(value);
     const th = CONFIG.THRESHOLDS;
-    const danger = { text: 'อันตราย', badgeClass: 'bg-rose-100 text-rose-700 font-semibold' };
-    const risky = { text: 'เสี่ยง', badgeClass: 'bg-amber-100 text-amber-700 font-semibold' };
-    const safe = { text: 'ปลอดภัย', badgeClass: 'bg-emerald-100 text-emerald-700 font-semibold' };
+    const danger = { text: 'เกินเกณฑ์วิกฤต', badgeClass: 'bg-rose-50 text-rose-800 border border-rose-300 font-semibold' };
+    const risky = { text: 'เฝ้าระวัง', badgeClass: 'bg-amber-50 text-amber-800 border border-amber-300 font-semibold' };
+    const safe = { text: 'ปกติ (ตามเกณฑ์)', badgeClass: 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold' };
 
     if (type === 'temp') return num > th.temp.danger ? danger : num >= th.temp.risky ? risky : safe;
     if (type === 'ph') {
@@ -442,7 +459,19 @@ function updateBadge(id, stat) {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerText = stat.text;
-    el.className = `px-3 py-1 rounded-full text-xs transition-colors duration-200 ${stat.badgeClass}`;
+    el.className = `px-2.5 py-0.5 rounded text-xs transition-colors duration-200 ${stat.badgeClass}`;
+}
+
+function updateMeterBar(id, value, maxVal) {
+    const bar = document.getElementById(id);
+    if (!bar) return;
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+        bar.style.width = '0%';
+        return;
+    }
+    const pct = Math.max(0, Math.min(100, (num / maxVal) * 100));
+    bar.style.width = `${pct.toFixed(1)}%`;
 }
 
 async function fetchCurrentData() {
@@ -451,22 +480,22 @@ async function fetchCurrentData() {
 
     try {
         const data = await callApi('get_current', { machine_id: machineAtRequest });
-        if (machineAtRequest !== currentMachine) return; // ผู้ใช้เปลี่ยนเครื่องระหว่างรอ
+        if (machineAtRequest !== currentMachine) return;
 
         const badge = document.getElementById('connectionBadge');
 
         if (!data || Object.keys(data).length === 0 || data.status === 'error') {
-            badge.innerText = `ไม่พบ ${currentMachine}`;
-            badge.className = 'px-2.5 py-1 text-xs rounded-full font-medium bg-rose-50 text-rose-700 border border-rose-200 inline-block';
+            badge.innerText = `NOT FOUND: ${currentMachine}`;
+            badge.className = 'px-2.5 py-1 text-xs rounded font-mono-num font-semibold bg-rose-50 text-rose-800 border border-rose-300 inline-block';
             if (!machineNotFoundWarned) {
                 machineNotFoundWarned = true;
-                showToast(`ไม่พบ Machine ID "${currentMachine}" ในระบบ กด "+ เพิ่ม Machine ID" เพื่อลงทะเบียน`, 'error');
+                showToast(`ไม่พบสถานี "${currentMachine}" ในฐานข้อมูล กด "ลงทะเบียนสถานีใหม่" เพื่อเพิ่ม`, 'error');
             }
             return;
         }
 
-        badge.innerText = `เชื่อมต่อกับ ${currentMachine}`;
-        badge.className = 'px-2.5 py-1 text-xs rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block';
+        badge.innerText = `ONLINE // NODE: ${currentMachine}`;
+        badge.className = 'px-2.5 py-1 text-xs rounded font-mono-num font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 inline-block';
 
         document.getElementById('tempCurrent').innerText = formatNumber(data.current_temp);
         document.getElementById('phCurrent').innerText = formatNumber(data.current_ph);
@@ -476,14 +505,31 @@ async function fetchCurrentData() {
         updateBadge('phStatus', evaluateStatus('ph', data.current_ph));
         updateBadge('ecStatus', evaluateStatus('ec', data.current_ec));
 
+        updateMeterBar('tempBar', data.current_temp, 50);
+        updateMeterBar('phBar', data.current_ph, 14);
+        updateMeterBar('ecBar', data.current_ec, 4);
+
         syncSwitchesWithServer(data);
 
         const lu = document.getElementById('lastUpdated');
-        if (lu) lu.innerText = `อัปเดตล่าสุด ${new Date().toLocaleTimeString('th-TH')}`;
+        if (lu) lu.innerText = `ซิงค์ข้อมูลล่าสุด: ${new Date().toLocaleTimeString('th-TH', { hour12: false })}`;
     } catch (err) {
-        console.warn('fetchCurrentData:', err);
         const lu = document.getElementById('lastUpdated');
-        if (lu) lu.innerText = '⚠️ ดึงข้อมูลไม่สำเร็จ กำลังลองใหม่...';
+        if (lu) lu.innerText = 'กำลังซิงค์ข้อมูลใหม่...';
+    }
+}
+
+function updateDeviceIndicator(dev, isOn) {
+    const led = document.getElementById(dev.ledId);
+    const txt = document.getElementById(dev.textId);
+    if (led) {
+        led.className = isOn ? 'led-dot led-online' : 'led-dot led-standby';
+    }
+    if (txt) {
+        txt.innerText = isOn ? 'ACTIVE (ทำงาน)' : 'STANDBY (หยุดพัก)';
+        txt.className = isOn
+            ? 'text-xs font-mono-num font-semibold text-emerald-700'
+            : 'text-xs font-mono-num font-semibold text-slate-500';
     }
 }
 
@@ -493,13 +539,15 @@ function syncSwitchesWithServer(data) {
         if (switchLocks[dev.id] && now - switchLocks[dev.id] < CONFIG.SWITCH_LOCK_MS) return;
         const el = document.getElementById(dev.id);
         if (el && data[dev.field] !== undefined) {
-            el.checked = String(data[dev.field]) === dev.code;
+            const isOn = String(data[dev.field]) === dev.code;
+            el.checked = isOn;
+            updateDeviceIndicator(dev, isOn);
         }
     });
 }
 
 // ========================================================
-// Device Controls (Relay Switch)
+// Actuator Controls
 // ========================================================
 async function toggleDevice(elementId, onCommandCode) {
     const checkbox = document.getElementById(elementId);
@@ -507,13 +555,14 @@ async function toggleDevice(elementId, onCommandCode) {
 
     if (!currentMachine) {
         checkbox.checked = !checkbox.checked;
-        showToast('กรุณาเชื่อมต่อ Machine ID ก่อนสั่งงาน', 'error');
+        showToast('กรุณาเชื่อมต่อสถานีก่อนสั่งการอุปกรณ์', 'error');
         return;
     }
 
     const isOn = checkbox.checked;
     switchLocks[elementId] = Date.now();
     checkbox.disabled = true;
+    if (dev) updateDeviceIndicator(dev, isOn);
 
     try {
         const result = await callApi('set_device_command', {
@@ -524,15 +573,16 @@ async function toggleDevice(elementId, onCommandCode) {
 
         if (result.status === 'success') {
             switchLocks[elementId] = Date.now();
-            showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'เปิด (ON)' : 'ปิด (OFF)'}`, 'success');
+            showToast(`ส่งคำสั่ง ${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'ทำงาน (ACTIVE)' : 'หยุดพัก (STANDBY)'}`, 'success');
         } else {
             checkbox.checked = !isOn;
+            if (dev) updateDeviceIndicator(dev, !isOn);
             delete switchLocks[elementId];
-            showToast(result.message || 'สั่งงานไม่สำเร็จ', 'error');
+            showToast(result.message || 'ไม่สามารถส่งคำสั่งได้', 'error');
         }
     } catch (err) {
-        console.error('toggleDevice:', err);
         checkbox.checked = !isOn;
+        if (dev) updateDeviceIndicator(dev, !isOn);
         delete switchLocks[elementId];
         showToast(`ส่งคำสั่งไม่สำเร็จ: ${err.message}`, 'error');
     } finally {
@@ -541,8 +591,22 @@ async function toggleDevice(elementId, onCommandCode) {
 }
 
 // ========================================================
-// History & Charts
+// Historical Charts, Stats & CSV Export
 // ========================================================
+function updateStatsLabel(elementId, values, unit) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const nums = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
+    if (nums.length === 0) {
+        el.innerText = 'ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --';
+        return;
+    }
+    const min = Math.min(...nums).toFixed(2);
+    const max = Math.max(...nums).toFixed(2);
+    const avg = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
+    el.innerText = `ต่ำสุด: ${min} ${unit} | เฉลี่ย: ${avg} ${unit} | สูงสุด: ${max} ${unit}`;
+}
+
 async function fetchHistory() {
     if (!currentMachine) return;
     const machineAtRequest = currentMachine;
@@ -556,14 +620,59 @@ async function fetchHistory() {
             .filter(d => d.recorded_at && localDateKey(d.recorded_at) === selectedDate)
             .sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
 
-        const labels = filtered.map(d => new Date(d.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
+        lastHistoryRecords = filtered;
 
-        renderChart('tempChart', 'Temperature (°C)', labels, filtered.map(d => d.temperature), '#EF4444', 'rgba(239, 68, 68, 0.1)');
-        renderChart('phChart', 'pH Level', labels, filtered.map(d => d.ph), '#3B82F6', 'rgba(59, 130, 246, 0.1)');
-        renderChart('ecChart', 'EC Level (mS/cm)', labels, filtered.map(d => d.ec), '#10B981', 'rgba(16, 185, 129, 0.1)');
+        const countEl = document.getElementById('historyCount');
+        if (countEl) countEl.innerText = `ข้อมูล: ${filtered.length} รายการ`;
+
+        const labels = filtered.map(d => new Date(d.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }));
+        const temps = filtered.map(d => d.temperature);
+        const phs = filtered.map(d => d.ph);
+        const ecs = filtered.map(d => d.ec);
+
+        updateStatsLabel('tempStats', temps, '°C');
+        updateStatsLabel('phStats', phs, 'pH');
+        updateStatsLabel('ecStats', ecs, 'mS/cm');
+
+        renderChart('tempChart', 'Temperature (°C)', labels, temps, '#EA580C', 'rgba(234, 88, 12, 0.08)');
+        renderChart('phChart', 'pH Level', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.08)');
+        renderChart('ecChart', 'EC Level (mS/cm)', labels, ecs, '#059669', 'rgba(5, 150, 105, 0.08)');
     } catch (err) {
         console.warn('fetchHistory:', err);
     }
+}
+
+function exportCsv() {
+    if (!currentMachine) {
+        showToast('กรุณาเชื่อมต่อสถานีก่อนส่งออกข้อมูล', 'error');
+        return;
+    }
+    if (!lastHistoryRecords || lastHistoryRecords.length === 0) {
+        showToast('ไม่มีข้อมูลในวันที่เลือกสำหรับส่งออก', 'error');
+        return;
+    }
+
+    const selectedDate = document.getElementById('datePicker').value || localDateKey(new Date());
+    const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'EC_mS_cm'];
+    const rows = lastHistoryRecords.map(r => [
+        currentMachine,
+        new Date(r.recorded_at).toLocaleString('th-TH', { hour12: false }),
+        r.temperature,
+        r.ph,
+        r.ec
+    ]);
+
+    const csvContent = '\uFEFF' + [header, ...rows].map(e => e.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `water_telemetry_${currentMachine}_${selectedDate}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`ส่งออกไฟล์ CSV สำเร็จ (${lastHistoryRecords.length} รายการ)`, 'success');
 }
 
 function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) {
@@ -581,11 +690,11 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
                 data: dataPoints,
                 borderColor,
                 backgroundColor: bgColor,
-                borderWidth: 2.5,
-                pointRadius: dataPoints.length > 100 ? 0 : 3,
-                pointHoverRadius: 6,
+                borderWidth: 2,
+                pointRadius: dataPoints.length > 80 ? 0 : 2.5,
+                pointHoverRadius: 5,
                 fill: true,
-                tension: 0.35
+                tension: 0.25
             }]
         },
         options: {
@@ -595,16 +704,22 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                    titleFont: { family: 'Prompt', size: 12 },
-                    bodyFont: { family: 'Prompt', size: 13 },
+                    backgroundColor: '#0F172A',
+                    titleFont: { family: 'JetBrains Mono', size: 11 },
+                    bodyFont: { family: 'IBM Plex Sans Thai', size: 12 },
                     padding: 10,
-                    cornerRadius: 8
+                    cornerRadius: 4
                 }
             },
             scales: {
-                y: { grid: { color: 'rgba(226, 232, 240, 0.6)' }, ticks: { font: { family: 'Prompt', size: 11 }, color: '#64748B' } },
-                x: { grid: { display: false }, ticks: { font: { family: 'Prompt', size: 11 }, color: '#64748B', maxTicksLimit: 12 } }
+                y: {
+                    grid: { color: '#E2E8F0' },
+                    ticks: { font: { family: 'JetBrains Mono', size: 11 }, color: '#475569' }
+                },
+                x: {
+                    grid: { color: '#F1F5F9' },
+                    ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#64748B', maxTicksLimit: 12 }
+                }
             }
         }
     });
