@@ -3,8 +3,32 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const ROOT_DIR = path.resolve(__dirname, '..');
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec";
+
+// Explicitly reference and preload static files with literal path.join(__dirname, ...)
+// so Vercel's @vercel/nft file tracer always bundles them into the serverless runtime.
+const STATIC_ASSETS = {
+    '/': {
+        file: path.join(__dirname, 'index.html'),
+        type: 'text/html; charset=UTF-8',
+        data: fs.readFileSync(path.join(__dirname, 'index.html'))
+    },
+    '/index.html': {
+        file: path.join(__dirname, 'index.html'),
+        type: 'text/html; charset=UTF-8',
+        data: fs.readFileSync(path.join(__dirname, 'index.html'))
+    },
+    '/js/config.js': {
+        file: path.join(__dirname, 'js/config.js'),
+        type: 'text/javascript; charset=UTF-8',
+        data: fs.readFileSync(path.join(__dirname, 'js/config.js'))
+    },
+    '/js/app.js': {
+        file: path.join(__dirname, 'js/app.js'),
+        type: 'text/javascript; charset=UTF-8',
+        data: fs.readFileSync(path.join(__dirname, 'js/app.js'))
+    }
+};
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=UTF-8',
@@ -19,6 +43,11 @@ const MIME_TYPES = {
 };
 
 function readBody(req) {
+    if (req.body !== undefined && req.body !== null) {
+        if (Buffer.isBuffer(req.body)) return Promise.resolve(req.body.toString('utf8'));
+        if (typeof req.body === 'string') return Promise.resolve(req.body);
+        if (typeof req.body === 'object') return Promise.resolve(new URLSearchParams(req.body).toString());
+    }
     return new Promise((resolve, reject) => {
         const chunks = [];
         req.on('data', c => chunks.push(c));
@@ -51,7 +80,7 @@ async function proxyToGas(req, res) {
     }
 }
 
-const server = http.createServer(async (req, res) => {
+async function requestHandler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -62,17 +91,34 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    const pathname = req.url.split('?')[0];
+    const pathname = (req.url || '/').split('?')[0];
 
+    // 1. Proxy /api requests to Google Apps Script
     if (pathname === '/api' || pathname.startsWith('/api/')) {
         await proxyToGas(req, res);
         return;
     }
 
-    const safePath = pathname === '/' ? '/index.html' : decodeURIComponent(pathname);
-    const filePath = path.join(ROOT_DIR, safePath);
+    // 2. Serve bundled core static assets (guaranteed on Vercel & local)
+    if (STATIC_ASSETS[pathname]) {
+        const asset = STATIC_ASSETS[pathname];
+        let content = asset.data;
+        try {
+            content = fs.readFileSync(asset.file);
+        } catch (_) {}
+        res.writeHead(200, {
+            'Content-Type': asset.type,
+            'Cache-Control': 'no-cache'
+        });
+        res.end(content);
+        return;
+    }
 
-    if (!filePath.startsWith(ROOT_DIR)) {
+    // 3. Fallback for any other local files
+    const safePath = decodeURIComponent(pathname);
+    const filePath = path.join(__dirname, safePath);
+
+    if (!filePath.startsWith(__dirname)) {
         res.writeHead(403, { 'Content-Type': 'text/plain' });
         res.end('403 Forbidden');
         return;
@@ -91,7 +137,9 @@ const server = http.createServer(async (req, res) => {
         });
         res.end(content);
     });
-});
+}
+
+const server = http.createServer(requestHandler);
 
 server.on('error', err => {
     if (err.code === 'EADDRINUSE') {
@@ -104,7 +152,9 @@ server.on('error', err => {
 
 server.listen(PORT, () => {
     console.log(`\n==================================================`);
-    console.log(`🚀 Smart Sensor Dashboard is running locally!`);
+    console.log(`🚀 Smart Sensor Dashboard is running!`);
     console.log(`👉 Open in browser: http://localhost:${PORT}`);
     console.log(`==================================================\n`);
 });
+
+module.exports = server;
