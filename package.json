@@ -1,5 +1,5 @@
 {
-  "name": "smart-sensor-dashboard",
+  "name": "watercleaner",
   "version": "1.0.0",
   "private": true,
   "description": "Smart Sensor & IoT Control Dashboard for Google Sheets and Vercel",

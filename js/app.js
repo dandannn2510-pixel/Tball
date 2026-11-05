@@ -1,5 +1,5 @@
 // ========================================================
-// AQUAFLOW — Water Quality Telemetry & Control System
+// WATERCLEANER — Water Quality Telemetry & Control System
 // ========================================================
 
 let currentMachine = '';
@@ -688,7 +688,7 @@ function exportCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aquaflow_${currentMachine}_${selectedDate}.csv`;
+    a.download = `watercleaner_${currentMachine}_${selectedDate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
