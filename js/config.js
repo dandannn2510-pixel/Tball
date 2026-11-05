@@ -3,8 +3,11 @@
 // ========================================================
 
 const CONFIG = {
-    // Google Apps Script Web App Deployment URL
-    API_URL: "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec",
+    // Uses internal proxy /api when on web server (eliminates Google CORS issues)
+    // Falls back to direct Google Apps Script URL if opened as local file
+    API_URL: window.location.protocol.startsWith('http')
+        ? "/api"
+        : "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec",
     
     // Polling interval in milliseconds (3000ms = 3s)
     POLL_INTERVAL_MS: 3000,
@@ -27,4 +30,3 @@ const CONFIG = {
         }
     }
 };
-

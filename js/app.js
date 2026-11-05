@@ -87,19 +87,44 @@ function checkLoginStatus() {
     if (window.lucide) lucide.createIcons();
 }
 
-function toggleAuthMode() {
-    isLoginMode = !isLoginMode;
+function switchAuthTab(mode) {
+    isLoginMode = (mode === 'login');
     const authTitle = document.getElementById('authTitle');
     const authSubmitText = document.getElementById('authSubmitText');
-    const authSwitchText = document.getElementById('authSwitchText');
+    const authUsernameLabel = document.getElementById('authUsernameLabel');
     const authMsgBox = document.getElementById('authMsgBox');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
 
-    authTitle.innerText = isLoginMode ? "เข้าสู่ระบบ" : "สมัครสมาชิก";
-    authSubmitText.innerText = isLoginMode ? "เข้าสู่ระบบ" : "สมัครสมาชิก";
-    authSwitchText.innerText = isLoginMode ? "ยังไม่มีบัญชี? สมัครสมาชิกที่นี่" : "มีบัญชีอยู่แล้ว? เข้าสู่ระบบ";
-    
+    if (isLoginMode) {
+        authTitle.innerText = "เข้าสู่ระบบ";
+        authSubmitText.innerText = "เข้าสู่ระบบ";
+        if (authUsernameLabel) authUsernameLabel.innerText = "ชื่อผู้ใช้งาน (Username)";
+        tabLogin.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all shadow-sm bg-white text-indigo-600";
+        tabRegister.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-800";
+    } else {
+        authTitle.innerText = "สมัครสมาชิกใหม่";
+        authSubmitText.innerText = "ยืนยันการสมัครสมาชิก";
+        if (authUsernameLabel) authUsernameLabel.innerText = "ตั้งชื่อผู้ใช้งานใหม่ (New Username)";
+        tabRegister.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all shadow-sm bg-white text-indigo-600";
+        tabLogin.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-800";
+    }
+
     authMsgBox.classList.add('hidden');
-    authMsgBox.innerText = "";
+    authMsgBox.innerHTML = "";
+    if (window.lucide) lucide.createIcons();
+}
+
+function quickGuestLogin() {
+    const guestUser = "Guest_" + Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem("userID", "9999");
+    localStorage.setItem("username", guestUser);
+    showToast(`เข้าสู่ระบบในโหมดด่วน (${guestUser})`, 'success');
+    checkLoginStatus();
+}
+
+function toggleAuthMode() {
+    switchAuthTab(isLoginMode ? 'register' : 'login');
 }
 
 async function handleAuth(event) {
@@ -137,11 +162,36 @@ async function handleAuth(event) {
                 usernameInput.value = "";
                 checkLoginStatus();
             } else {
-                showToast("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ", 'success');
-                toggleAuthMode();
+                showToast("สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบให้อัตโนมัติ...", 'success');
+                // Automatically switch to login and attempt login
+                isLoginMode = true;
+                const loginParams = new URLSearchParams();
+                loginParams.append("username", username);
+                try {
+                    const loginRes = await fetch(`${CONFIG.API_URL}?action=login_user`, {
+                        method: 'POST',
+                        body: loginParams
+                    });
+                    const loginData = await loginRes.json();
+                    if (loginData.status === "success") {
+                        localStorage.setItem("userID", loginData.user_id);
+                        localStorage.setItem("username", loginData.username);
+                        checkLoginStatus();
+                        return;
+                    }
+                } catch(e) {}
+                switchAuthTab('login');
+                authMsgBox.className = "mb-4 p-3 rounded-xl text-sm border bg-emerald-50 text-emerald-700 border-emerald-200 text-center";
+                authMsgBox.innerText = `สมัครสมาชิกสำเร็จ! กรุณากด "เข้าสู่ระบบ" ได้เลย`;
+                authMsgBox.classList.remove('hidden');
             }
         } else {
-            authMsgBox.innerText = data.message || "เกิดข้อผิดพลาดในการดำเนินการ";
+            authMsgBox.className = "mb-4 p-3 rounded-xl text-sm border bg-rose-50 text-rose-700 border-rose-200 text-center";
+            if (isLoginMode && (data.message && data.message.includes('ไม่พบ'))) {
+                authMsgBox.innerHTML = `<div>${data.message}</div><button type="button" onclick="switchAuthTab('register')" class="mt-2 text-indigo-600 hover:text-indigo-800 font-semibold underline text-xs block mx-auto">👉 คลิกที่นี่เพื่อสมัครสมาชิกด้วยชื่อ "${username}" ทันที</button>`;
+            } else {
+                authMsgBox.innerText = data.message || "เกิดข้อผิดพลาดในการดำเนินการ";
+            }
             authMsgBox.classList.remove('hidden');
         }
     } catch (err) {

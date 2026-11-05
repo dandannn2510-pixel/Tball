@@ -69,25 +69,37 @@
     <!-- ========================================== -->
     <div id="authScreen" class="flex-1 flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-md p-8 rounded-2xl shadow-xl border border-slate-200">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 mb-4 shadow-inner">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 mb-3 shadow-inner">
                     <i data-lucide="cpu" class="w-8 h-8"></i>
                 </div>
                 <h2 id="authTitle" class="text-2xl font-bold text-slate-800">เข้าสู่ระบบ</h2>
-                <p class="text-sm text-slate-500 mt-1">Smart Sensor & IoT Control Platform</p>
+                <p class="text-xs text-slate-500 mt-1">Smart Sensor & IoT Control Platform</p>
             </div>
 
-            <div id="authMsgBox" class="hidden mb-4 p-3 rounded-lg text-sm bg-red-50 text-red-600 border border-red-200 text-center"></div>
+            <!-- Mode Selector Tabs -->
+            <div class="flex p-1 bg-slate-100 rounded-xl mb-6">
+                <button type="button" id="tabLogin" onclick="switchAuthTab('login')"
+                    class="flex-1 py-2 text-sm font-medium rounded-lg transition-all shadow-sm bg-white text-indigo-600">
+                    เข้าสู่ระบบ
+                </button>
+                <button type="button" id="tabRegister" onclick="switchAuthTab('register')"
+                    class="flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-500 hover:text-slate-800">
+                    สมัครสมาชิกใหม่
+                </button>
+            </div>
+
+            <div id="authMsgBox" class="hidden mb-4 p-3 rounded-xl text-sm border text-center transition"></div>
 
             <form onsubmit="handleAuth(event)" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <label id="authUsernameLabel" class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้งาน (Username)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                             <i data-lucide="user" class="w-5 h-5"></i>
                         </span>
                         <input type="text" id="authUsername" required
-                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 transition"
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 text-sm transition"
                             placeholder="กรอกชื่อผู้ใช้งานของคุณ">
                     </div>
                 </div>
@@ -98,11 +110,17 @@
                 </button>
             </form>
 
-            <div class="mt-6 text-center">
-                <button type="button" onclick="toggleAuthMode()" id="authSwitchText" class="text-sm text-indigo-600 hover:text-indigo-800 hover:underline transition">
-                    ยังไม่มีบัญชี? สมัครสมาชิกที่นี่
-                </button>
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                <div class="relative flex justify-center text-xs text-slate-400 uppercase"><span class="bg-white px-2">หรือ</span></div>
             </div>
+
+            <!-- Quick Guest Login Button -->
+            <button type="button" onclick="quickGuestLogin()"
+                class="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm transition flex items-center justify-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                <span>เข้าใช้งานด่วน (Guest Mode ทันที)</span>
+            </button>
         </div>
     </div>
 
