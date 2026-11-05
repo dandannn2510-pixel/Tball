@@ -462,16 +462,21 @@ function updateBadge(id, stat) {
     el.className = `px-2.5 py-0.5 rounded text-xs transition-colors duration-200 ${stat.badgeClass}`;
 }
 
-function updateMeterBar(id, value, maxVal) {
+function updateMeterBar(id, value, maxVal, arcId) {
     const bar = document.getElementById(id);
-    if (!bar) return;
+    const arc = arcId ? document.getElementById(arcId) : null;
     const num = parseFloat(value);
     if (isNaN(num)) {
-        bar.style.width = '0%';
+        if (bar) bar.style.width = '0%';
+        if (arc) arc.style.strokeDashoffset = '144.5';
         return;
     }
     const pct = Math.max(0, Math.min(100, (num / maxVal) * 100));
-    bar.style.width = `${pct.toFixed(1)}%`;
+    if (bar) bar.style.width = `${pct.toFixed(1)}%`;
+    if (arc) {
+        const offset = 144.5 - (pct / 100) * 144.5;
+        arc.style.strokeDashoffset = offset.toFixed(1);
+    }
 }
 
 async function fetchCurrentData() {
@@ -505,9 +510,10 @@ async function fetchCurrentData() {
         updateBadge('phStatus', evaluateStatus('ph', data.current_ph));
         updateBadge('ecStatus', evaluateStatus('ec', data.current_ec));
 
-        updateMeterBar('tempBar', data.current_temp, 50);
-        updateMeterBar('phBar', data.current_ph, 14);
-        updateMeterBar('ecBar', data.current_ec, 4);
+        updateMeterBar('tempBar', data.current_temp, 50, 'tempGaugeArc');
+        updateMeterBar('phBar', data.current_ph, 14, 'phGaugeArc');
+        updateMeterBar('ecBar', data.current_ec, 4, 'ecGaugeArc');
+        updateOverallWaterStatus(data);
 
         syncSwitchesWithServer(data);
 
@@ -723,4 +729,27 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
             }
         }
     });
+}
+
+function updateOverallWaterStatus(data) {
+    const el = document.getElementById('overallWaterStatus');
+    if (!el) return;
+    const statuses = [
+        evaluateStatus('temp', data.current_temp).text,
+        evaluateStatus('ph', data.current_ph).text,
+        evaluateStatus('ec', data.current_ec).text
+    ];
+    if (statuses.includes('เกินเกณฑ์วิกฤต')) {
+        el.innerText = 'ภาพรวมคุณภาพน้ำ: เกินเกณฑ์วิกฤต (ควรเดินเครื่องบำบัด)';
+        el.className = 'px-3 py-1 rounded bg-rose-50 text-rose-800 border border-rose-300 font-semibold text-xs';
+    } else if (statuses.includes('เฝ้าระวัง')) {
+        el.innerText = 'ภาพรวมคุณภาพน้ำ: เฝ้าระวังค่าเบี่ยงเบน';
+        el.className = 'px-3 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300 font-semibold text-xs';
+    } else if (statuses.every(s => s === 'ปกติ (ตามเกณฑ์)')) {
+        el.innerText = 'ภาพรวมคุณภาพน้ำ: อยู่ในเกณฑ์มาตรฐานทั้งหมด';
+        el.className = 'px-3 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold text-xs';
+    } else {
+        el.innerText = 'ภาพรวมคุณภาพน้ำ: กำลังรับสัญญาณจากหัววัด';
+        el.className = 'px-3 py-1 rounded bg-slate-100 text-slate-600 border border-slate-200 font-semibold text-xs';
+    }
 }
