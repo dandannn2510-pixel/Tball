@@ -1,5 +1,5 @@
 // ========================================================
-// Water Quality Telemetry & Control System - Application Logic
+// Water Quality Monitoring & Control System
 // ========================================================
 
 let currentMachine = '';
@@ -13,10 +13,10 @@ let lastHistoryRecords = [];
 const switchLocks = {};
 
 const DEVICES = [
-    { id: 'motor1Toggle', code: '1', name: 'Motor 1', field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
-    { id: 'motor2Toggle', code: '2', name: 'Motor 2', field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
-    { id: 'pump1Toggle',  code: '3', name: 'Pump 1',  field: 'pump1_command',  ledId: 'pump1Led',  textId: 'pump1StateText' },
-    { id: 'pump2Toggle',  code: '4', name: 'Pump 2',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
+    { id: 'motor1Toggle', code: '1', name: 'มอเตอร์ 1', field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
+    { id: 'motor2Toggle', code: '2', name: 'มอเตอร์ 2', field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
+    { id: 'pump1Toggle',  code: '3', name: 'ปั๊มน้ำ 1',  field: 'pump1_command',  ledId: 'pump1Led',  textId: 'pump1StateText' },
+    { id: 'pump2Toggle',  code: '4', name: 'ปั๊มน้ำ 2',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
 ];
 
 // ========================================================
@@ -52,10 +52,10 @@ async function resolveApiBase(force = false) {
             apiBase = base;
             return apiBase;
         } catch (err) {
-            console.warn('[API] endpoint fallback:', base, err);
+            console.warn('[API] fallback:', base);
         }
     }
-    throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูล Google Sheets ได้');
+    throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
 }
 
 async function callApi(action, params = {}, method = 'GET') {
@@ -75,7 +75,7 @@ async function callApi(action, params = {}, method = 'GET') {
         return JSON.parse(text);
     } catch (e) {
         apiBase = null;
-        throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');
+        throw new Error('ข้อมูลตอบกลับไม่ถูกต้อง');
     }
 }
 
@@ -94,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
     startSystemClock();
     checkLoginStatus();
     checkApiStatus();
-    if (window.lucide) lucide.createIcons();
 });
 
 function startSystemClock() {
@@ -102,8 +101,7 @@ function startSystemClock() {
         const el = document.getElementById('systemClock');
         if (!el) return;
         const now = new Date();
-        el.innerText = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) +
-            ' | ' + now.toLocaleTimeString('th-TH', { hour12: false });
+        el.innerText = now.toLocaleTimeString('th-TH', { hour12: false });
     };
     updateClock();
     setInterval(updateClock, 1000);
@@ -112,15 +110,15 @@ function startSystemClock() {
 async function checkApiStatus() {
     const el = document.getElementById('apiStatus');
     if (!el) return;
-    el.className = 'text-[11px] font-mono-num text-slate-500 flex items-center gap-2';
-    el.innerHTML = '<span class="led-dot led-standby"></span><span>สถานะฐานข้อมูล: กำลังตรวจสอบการเชื่อมต่อ...</span>';
+    el.className = 'text-xs text-slate-400 flex items-center gap-2';
+    el.innerHTML = '<span class="led-dot led-standby"></span><span>กำลังตรวจสอบการเชื่อมต่อ...</span>';
     try {
         await resolveApiBase(true);
-        el.className = 'text-[11px] font-mono-num text-emerald-700 font-medium flex items-center gap-2';
-        el.innerHTML = '<span class="led-dot led-online"></span><span>สถานะฐานข้อมูล: เชื่อมต่อพร้อมใช้งาน (ONLINE)</span>';
+        el.className = 'text-xs text-slate-600 flex items-center gap-2';
+        el.innerHTML = '<span class="led-dot led-online"></span><span>เชื่อมต่อฐานข้อมูลแล้ว</span>';
     } catch (err) {
-        el.className = 'text-[11px] font-mono-num text-rose-700 flex items-center gap-2';
-        el.innerHTML = `<span class="led-dot led-error"></span><span>${escapeHtml(err.message)}</span> <button type="button" onclick="checkApiStatus()" class="underline font-semibold ml-1">ตรวจสอบใหม่</button>`;
+        el.className = 'text-xs text-rose-600 flex items-center gap-2';
+        el.innerHTML = `<span class="led-dot led-error"></span><span>${escapeHtml(err.message)}</span> <button type="button" onclick="checkApiStatus()" class="underline ml-1">ลองใหม่</button>`;
     }
 }
 
@@ -147,12 +145,12 @@ function showToast(message, type = 'info') {
     if (!container) return;
 
     const styles = {
-        success: 'bg-slate-900 border-l-4 border-emerald-500 text-white',
-        error: 'bg-slate-900 border-l-4 border-rose-500 text-white',
-        info: 'bg-slate-900 border-l-4 border-sky-500 text-white'
+        success: 'bg-slate-900 text-white',
+        error: 'bg-rose-600 text-white',
+        info: 'bg-slate-800 text-white'
     };
     const toast = document.createElement('div');
-    toast.className = `pointer-events-auto px-4 py-3 rounded shadow-lg text-xs font-medium transition-all duration-300 translate-y-2 opacity-0 ${styles[type] || styles.info}`;
+    toast.className = `pointer-events-auto px-4 py-2.5 rounded-lg shadow-md text-xs font-medium transition-all duration-300 translate-y-2 opacity-0 ${styles[type] || styles.info}`;
     toast.innerText = message;
     container.appendChild(toast);
 
@@ -160,18 +158,18 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, 3000);
 }
 
 function showAuthMessage(html, type = 'error') {
     const box = document.getElementById('authMsgBox');
     if (!box) return;
     const styles = {
-        error: 'bg-rose-50 text-rose-800 border-rose-300',
-        success: 'bg-emerald-50 text-emerald-800 border-emerald-300',
-        info: 'bg-sky-50 text-sky-800 border-sky-300'
+        error: 'bg-rose-50 text-rose-700 border-rose-200',
+        success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        info: 'bg-sky-50 text-sky-700 border-sky-200'
     };
-    box.className = `mb-4 p-3 rounded text-xs border text-center ${styles[type] || styles.error}`;
+    box.className = `mb-4 p-3 rounded-lg text-xs border text-center ${styles[type] || styles.error}`;
     box.innerHTML = html;
 }
 
@@ -203,19 +201,16 @@ function checkLoginStatus() {
         authScreen.classList.remove('hidden');
         dashboardScreen.classList.add('hidden');
     }
-    if (window.lucide) lucide.createIcons();
 }
 
 function switchAuthTab(mode) {
     isLoginMode = (mode === 'login');
-    const active = 'py-2 text-xs font-semibold rounded-sm transition-all bg-slate-900 text-white shadow-sm';
-    const inactive = 'py-2 text-xs font-semibold rounded-sm transition-all text-slate-600 hover:text-slate-900';
+    const active = 'py-2 text-xs font-semibold rounded-md transition-all bg-white text-slate-900 shadow-sm';
+    const inactive = 'py-2 text-xs font-medium rounded-md transition-all text-slate-500 hover:text-slate-800';
 
-    document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่ระบบผู้ปฏิบัติงาน' : 'ลงทะเบียนผู้ปฏิบัติงานใหม่';
-    document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่ระบบควบคุม' : 'ยืนยันการลงทะเบียน';
-    document.getElementById('authUsernameLabel').innerText = isLoginMode
-        ? 'รหัสหรือชื่อผู้ปฏิบัติงาน (Operator ID / Username)'
-        : 'กำหนดชื่อผู้ปฏิบัติงานใหม่ (New Operator ID)';
+    document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+    document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'ยืนยันการสมัครสมาชิก';
+    document.getElementById('authUsernameLabel').innerText = isLoginMode ? 'ชื่อผู้ใช้งาน' : 'ตั้งชื่อผู้ใช้งานใหม่';
     document.getElementById('tabLogin').className = isLoginMode ? active : inactive;
     document.getElementById('tabRegister').className = isLoginMode ? inactive : active;
     hideAuthMessage();
@@ -230,8 +225,7 @@ function setAuthLoading(loading, text) {
     const label = document.getElementById('authSubmitText');
     btn.disabled = loading;
     btn.classList.toggle('opacity-70', loading);
-    btn.classList.toggle('cursor-wait', loading);
-    label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่ระบบควบคุม' : 'ยืนยันการลงทะเบียน');
+    label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่ระบบ' : 'ยืนยันการสมัครสมาชิก');
 }
 
 function completeLogin(userId, username) {
@@ -239,7 +233,7 @@ function completeLogin(userId, username) {
     localStorage.setItem('username', String(username));
     document.getElementById('authUsername').value = '';
     hideAuthMessage();
-    showToast(`เข้าสู่ระบบสำเร็จ — ผู้ปฏิบัติงาน: ${username}`, 'success');
+    showToast(`เข้าสู่ระบบสำเร็จ (${username})`, 'success');
     checkLoginStatus();
 }
 
@@ -248,7 +242,7 @@ async function handleAuth(event) {
 
     const username = document.getElementById('authUsername').value.trim();
     if (!username) {
-        showAuthMessage('กรุณาระบุชื่อผู้ปฏิบัติงาน');
+        showAuthMessage('กรุณากรอกชื่อผู้ใช้งาน');
         return;
     }
 
@@ -256,19 +250,19 @@ async function handleAuth(event) {
 
     try {
         if (isLoginMode) {
-            setAuthLoading(true, 'กำลังตรวจสอบสิทธิ์...');
+            setAuthLoading(true, 'กำลังตรวจสอบ...');
             const data = await callApi('login_user', { username }, 'POST');
 
             if (data.status === 'success') {
                 completeLogin(data.user_id, data.username);
             } else {
-                const msg = escapeHtml(data.message || 'ไม่พบบัญชีผู้ใช้งานนี้');
+                const msg = escapeHtml(data.message || 'ไม่พบชื่อผู้ใช้งานนี้');
                 const safeName = escapeHtml(username).replace(/'/g, '&#39;');
                 showAuthMessage(
                     `<div>${msg}</div>
                      <button type="button" onclick="registerAndLogin('${safeName}')"
-                        class="mt-2 text-sky-800 hover:text-sky-950 font-semibold underline text-xs">
-                        คลิกที่นี่เพื่อลงทะเบียนชื่อ "${safeName}" และเข้าสู่ระบบทันที
+                        class="mt-1.5 text-sky-700 hover:text-sky-900 font-semibold underline text-xs">
+                        สมัครสมาชิกชื่อ "${safeName}" และเข้าสู่ระบบทันที
                      </button>`
                 );
             }
@@ -276,7 +270,7 @@ async function handleAuth(event) {
             await registerAndLogin(username);
         }
     } catch (err) {
-        showAuthMessage(`การเชื่อมต่อขัดข้อง: ${escapeHtml(err.name === 'AbortError' ? 'หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง' : err.message)}`);
+        showAuthMessage(`เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.name === 'AbortError' ? 'หมดเวลาเชื่อมต่อ กรุณาลองใหม่' : err.message)}`);
     } finally {
         setAuthLoading(false);
     }
@@ -284,11 +278,11 @@ async function handleAuth(event) {
 
 async function registerAndLogin(username) {
     hideAuthMessage();
-    setAuthLoading(true, 'กำลังบันทึกข้อมูลผู้ใช้งาน...');
+    setAuthLoading(true, 'กำลังบันทึก...');
     try {
         const reg = await callApi('register_user', { username }, 'POST');
         if (reg.status !== 'success' && !(reg.message || '').includes('มีคนใช้แล้ว')) {
-            showAuthMessage(escapeHtml(reg.message || 'ไม่สามารถลงทะเบียนได้'));
+            showAuthMessage(escapeHtml(reg.message || 'สมัครสมาชิกไม่สำเร็จ'));
             return;
         }
 
@@ -299,17 +293,17 @@ async function registerAndLogin(username) {
         } else {
             isLoginMode = true;
             switchAuthTab('login');
-            showAuthMessage('ลงทะเบียนสำเร็จ กรุณากดเข้าสู่ระบบ', 'success');
+            showAuthMessage('สมัครสมาชิกสำเร็จ กรุณากดเข้าสู่ระบบ', 'success');
         }
     } catch (err) {
-        showAuthMessage(`การเชื่อมต่อขัดข้อง: ${escapeHtml(err.message)}`);
+        showAuthMessage(`เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.message)}`);
     } finally {
         setAuthLoading(false);
     }
 }
 
 function quickGuestLogin() {
-    completeLogin('DEMO', 'EVALUATOR_DEMO');
+    completeLogin('DEMO', 'ผู้เยี่ยมชม');
 }
 
 function logout() {
@@ -324,12 +318,12 @@ function logout() {
     if (badge) badge.className = 'hidden';
     resetDashboard();
 
-    showToast('ออกจากระบบควบคุมเรียบร้อยแล้ว', 'info');
+    showToast('ออกจากระบบแล้ว', 'info');
     checkLoginStatus();
 }
 
 // ========================================================
-// Station Binding & Registration
+// Machine Connection & Registration
 // ========================================================
 function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
@@ -354,7 +348,7 @@ function resetDashboard() {
     charts = {};
     lastHistoryRecords = [];
     const lu = document.getElementById('lastUpdated');
-    if (lu) lu.innerText = 'สถานะ: รอการระบุหมายเลขสถานี';
+    if (lu) lu.innerText = 'ยังไม่ได้เชื่อมต่อเครื่อง';
 }
 
 function bindMachine(targetId, silent = false) {
@@ -362,7 +356,7 @@ function bindMachine(targetId, silent = false) {
     const machineId = String(targetId || input.value || '').trim();
 
     if (!machineId) {
-        showToast('กรุณาระบุหมายเลขสถานี (Machine ID)', 'error');
+        showToast('กรุณากรอกรหัสเครื่อง (Machine ID)', 'error');
         return;
     }
 
@@ -373,10 +367,10 @@ function bindMachine(targetId, silent = false) {
     localStorage.setItem('currentMachine', currentMachine);
 
     const badge = document.getElementById('connectionBadge');
-    badge.innerText = `CONNECTING: ${currentMachine}`;
-    badge.className = 'px-2.5 py-1 text-xs rounded font-mono-num font-semibold bg-amber-50 text-amber-800 border border-amber-300 inline-block';
+    badge.innerText = `กำลังเชื่อมต่อ ${currentMachine}...`;
+    badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-amber-50 text-amber-700 inline-block';
 
-    if (!silent) showToast(`กำลังซิงค์ข้อมูลสถานี ${currentMachine}...`, 'info');
+    if (!silent) showToast(`กำลังดึงข้อมูลจาก ${currentMachine}...`, 'info');
 
     fetchCurrentData();
     fetchHistory();
@@ -416,16 +410,16 @@ async function submitNewMachine(event) {
         }, 'POST');
 
         if (data.status === 'success') {
-            showToast(`ลงทะเบียนสถานี "${newId}" สำเร็จ`, 'success');
+            showToast(`เพิ่มเครื่อง "${newId}" สำเร็จ`, 'success');
         } else {
-            showToast(data.message || 'ไม่สามารถลงทะเบียนสถานีได้', 'error');
+            showToast(data.message || 'ไม่สามารถเพิ่มเครื่องได้', 'error');
             if (!(data.message || '').includes('ลงทะเบียนไปแล้ว')) return;
         }
         closeAddMachineModal();
         document.getElementById('machineIdInput').value = newId;
         bindMachine(newId, true);
     } catch (err) {
-        showToast(`การเชื่อมต่อขัดข้อง: ${err.message}`, 'error');
+        showToast(`เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
@@ -433,17 +427,17 @@ async function submitNewMachine(event) {
 }
 
 // ========================================================
-// Real-time Telemetry Polling & Evaluation
+// Real-time Telemetry Polling
 // ========================================================
 function evaluateStatus(type, value) {
-    const none = { text: 'รอรับข้อมูล', badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200' };
+    const none = { text: 'รอข้อมูล', badgeClass: 'bg-slate-100 text-slate-500' };
     if (value === null || value === undefined || value === '' || isNaN(parseFloat(value))) return none;
 
     const num = parseFloat(value);
     const th = CONFIG.THRESHOLDS;
-    const danger = { text: 'เกินเกณฑ์วิกฤต', badgeClass: 'bg-rose-50 text-rose-800 border border-rose-300 font-semibold' };
-    const risky = { text: 'เฝ้าระวัง', badgeClass: 'bg-amber-50 text-amber-800 border border-amber-300 font-semibold' };
-    const safe = { text: 'ปกติ (ตามเกณฑ์)', badgeClass: 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold' };
+    const danger = { text: 'อันตราย', badgeClass: 'bg-rose-50 text-rose-700 font-semibold' };
+    const risky = { text: 'เฝ้าระวัง', badgeClass: 'bg-amber-50 text-amber-700 font-semibold' };
+    const safe = { text: 'ปกติ', badgeClass: 'bg-emerald-50 text-emerald-700 font-semibold' };
 
     if (type === 'temp') return num > th.temp.danger ? danger : num >= th.temp.risky ? risky : safe;
     if (type === 'ph') {
@@ -459,23 +453,41 @@ function updateBadge(id, stat) {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerText = stat.text;
-    el.className = `px-2.5 py-0.5 rounded text-xs transition-colors duration-200 ${stat.badgeClass}`;
+    el.className = `px-2.5 py-0.5 rounded-full text-xs transition-colors duration-200 ${stat.badgeClass}`;
 }
 
-function updateMeterBar(id, value, maxVal, arcId) {
+function updateMeterBar(id, value, maxVal) {
     const bar = document.getElementById(id);
-    const arc = arcId ? document.getElementById(arcId) : null;
+    if (!bar) return;
     const num = parseFloat(value);
     if (isNaN(num)) {
-        if (bar) bar.style.width = '0%';
-        if (arc) arc.style.strokeDashoffset = '144.5';
+        bar.style.width = '0%';
         return;
     }
     const pct = Math.max(0, Math.min(100, (num / maxVal) * 100));
-    if (bar) bar.style.width = `${pct.toFixed(1)}%`;
-    if (arc) {
-        const offset = 144.5 - (pct / 100) * 144.5;
-        arc.style.strokeDashoffset = offset.toFixed(1);
+    bar.style.width = `${pct.toFixed(1)}%`;
+}
+
+function updateOverallWaterStatus(data) {
+    const el = document.getElementById('overallWaterStatus');
+    if (!el) return;
+    const statuses = [
+        evaluateStatus('temp', data.current_temp).text,
+        evaluateStatus('ph', data.current_ph).text,
+        evaluateStatus('ec', data.current_ec).text
+    ];
+    if (statuses.includes('อันตราย')) {
+        el.innerText = 'สถานะภาพรวม: พบค่าเกินเกณฑ์อันตราย';
+        el.className = 'text-xs font-semibold text-rose-600';
+    } else if (statuses.includes('เฝ้าระวัง')) {
+        el.innerText = 'สถานะภาพรวม: มีค่าอยู่ในเกณฑ์เฝ้าระวัง';
+        el.className = 'text-xs font-semibold text-amber-600';
+    } else if (statuses.every(s => s === 'ปกติ')) {
+        el.innerText = 'สถานะภาพรวม: คุณภาพน้ำปกติทุกพารามิเตอร์';
+        el.className = 'text-xs font-semibold text-emerald-600';
+    } else {
+        el.innerText = 'สถานะภาพรวม: กำลังรับข้อมูลจากเซนเซอร์';
+        el.className = 'text-xs font-medium text-slate-500';
     }
 }
 
@@ -490,17 +502,17 @@ async function fetchCurrentData() {
         const badge = document.getElementById('connectionBadge');
 
         if (!data || Object.keys(data).length === 0 || data.status === 'error') {
-            badge.innerText = `NOT FOUND: ${currentMachine}`;
-            badge.className = 'px-2.5 py-1 text-xs rounded font-mono-num font-semibold bg-rose-50 text-rose-800 border border-rose-300 inline-block';
+            badge.innerText = `ไม่พบเครื่อง ${currentMachine}`;
+            badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-rose-50 text-rose-700 inline-block';
             if (!machineNotFoundWarned) {
                 machineNotFoundWarned = true;
-                showToast(`ไม่พบสถานี "${currentMachine}" ในฐานข้อมูล กด "ลงทะเบียนสถานีใหม่" เพื่อเพิ่ม`, 'error');
+                showToast(`ไม่พบรหัสเครื่อง "${currentMachine}" กด "+ เพิ่มเครื่อง" เพื่อลงทะเบียน`, 'error');
             }
             return;
         }
 
-        badge.innerText = `ONLINE // NODE: ${currentMachine}`;
-        badge.className = 'px-2.5 py-1 text-xs rounded font-mono-num font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 inline-block';
+        badge.innerText = `เชื่อมต่อแล้ว: ${currentMachine}`;
+        badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-emerald-50 text-emerald-700 inline-block';
 
         document.getElementById('tempCurrent').innerText = formatNumber(data.current_temp);
         document.getElementById('phCurrent').innerText = formatNumber(data.current_ph);
@@ -510,32 +522,28 @@ async function fetchCurrentData() {
         updateBadge('phStatus', evaluateStatus('ph', data.current_ph));
         updateBadge('ecStatus', evaluateStatus('ec', data.current_ec));
 
-        updateMeterBar('tempBar', data.current_temp, 50, 'tempGaugeArc');
-        updateMeterBar('phBar', data.current_ph, 14, 'phGaugeArc');
-        updateMeterBar('ecBar', data.current_ec, 4, 'ecGaugeArc');
+        updateMeterBar('tempBar', data.current_temp, 50);
+        updateMeterBar('phBar', data.current_ph, 14);
+        updateMeterBar('ecBar', data.current_ec, 4);
         updateOverallWaterStatus(data);
 
         syncSwitchesWithServer(data);
 
         const lu = document.getElementById('lastUpdated');
-        if (lu) lu.innerText = `ซิงค์ข้อมูลล่าสุด: ${new Date().toLocaleTimeString('th-TH', { hour12: false })}`;
+        if (lu) lu.innerText = `อัปเดตล่าสุดเมื่อ ${new Date().toLocaleTimeString('th-TH', { hour12: false })}`;
     } catch (err) {
         const lu = document.getElementById('lastUpdated');
-        if (lu) lu.innerText = 'กำลังซิงค์ข้อมูลใหม่...';
+        if (lu) lu.innerText = 'กำลังซิงค์ข้อมูล...';
     }
 }
 
 function updateDeviceIndicator(dev, isOn) {
     const led = document.getElementById(dev.ledId);
     const txt = document.getElementById(dev.textId);
-    if (led) {
-        led.className = isOn ? 'led-dot led-online' : 'led-dot led-standby';
-    }
+    if (led) led.className = isOn ? 'led-dot led-online' : 'led-dot led-standby';
     if (txt) {
-        txt.innerText = isOn ? 'ACTIVE (ทำงาน)' : 'STANDBY (หยุดพัก)';
-        txt.className = isOn
-            ? 'text-xs font-mono-num font-semibold text-emerald-700'
-            : 'text-xs font-mono-num font-semibold text-slate-500';
+        txt.innerText = isOn ? 'กำลังทำงาน' : 'ปิดอยู่';
+        txt.className = isOn ? 'text-xs font-medium text-emerald-600' : 'text-xs text-slate-400';
     }
 }
 
@@ -553,7 +561,7 @@ function syncSwitchesWithServer(data) {
 }
 
 // ========================================================
-// Actuator Controls
+// Equipment Controls
 // ========================================================
 async function toggleDevice(elementId, onCommandCode) {
     const checkbox = document.getElementById(elementId);
@@ -561,7 +569,7 @@ async function toggleDevice(elementId, onCommandCode) {
 
     if (!currentMachine) {
         checkbox.checked = !checkbox.checked;
-        showToast('กรุณาเชื่อมต่อสถานีก่อนสั่งการอุปกรณ์', 'error');
+        showToast('กรุณาเชื่อมต่อรหัสเครื่องก่อนสั่งงาน', 'error');
         return;
     }
 
@@ -579,12 +587,12 @@ async function toggleDevice(elementId, onCommandCode) {
 
         if (result.status === 'success') {
             switchLocks[elementId] = Date.now();
-            showToast(`ส่งคำสั่ง ${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'ทำงาน (ACTIVE)' : 'หยุดพัก (STANDBY)'}`, 'success');
+            showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'เปิดทำงาน' : 'ปิด'}`, 'success');
         } else {
             checkbox.checked = !isOn;
             if (dev) updateDeviceIndicator(dev, !isOn);
             delete switchLocks[elementId];
-            showToast(result.message || 'ไม่สามารถส่งคำสั่งได้', 'error');
+            showToast(result.message || 'สั่งงานไม่สำเร็จ', 'error');
         }
     } catch (err) {
         checkbox.checked = !isOn;
@@ -597,7 +605,7 @@ async function toggleDevice(elementId, onCommandCode) {
 }
 
 // ========================================================
-// Historical Charts, Stats & CSV Export
+// Historical Charts & CSV Export
 // ========================================================
 function updateStatsLabel(elementId, values, unit) {
     const el = document.getElementById(elementId);
@@ -610,7 +618,7 @@ function updateStatsLabel(elementId, values, unit) {
     const min = Math.min(...nums).toFixed(2);
     const max = Math.max(...nums).toFixed(2);
     const avg = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
-    el.innerText = `ต่ำสุด: ${min} ${unit} | เฉลี่ย: ${avg} ${unit} | สูงสุด: ${max} ${unit}`;
+    el.innerText = `ต่ำสุด ${min} | เฉลี่ย ${avg} | สูงสุด ${max} ${unit}`;
 }
 
 async function fetchHistory() {
@@ -629,7 +637,7 @@ async function fetchHistory() {
         lastHistoryRecords = filtered;
 
         const countEl = document.getElementById('historyCount');
-        if (countEl) countEl.innerText = `ข้อมูล: ${filtered.length} รายการ`;
+        if (countEl) countEl.innerText = `ข้อมูลที่บันทึก: ${filtered.length} รายการ`;
 
         const labels = filtered.map(d => new Date(d.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }));
         const temps = filtered.map(d => d.temperature);
@@ -640,9 +648,9 @@ async function fetchHistory() {
         updateStatsLabel('phStats', phs, 'pH');
         updateStatsLabel('ecStats', ecs, 'mS/cm');
 
-        renderChart('tempChart', 'Temperature (°C)', labels, temps, '#EA580C', 'rgba(234, 88, 12, 0.08)');
-        renderChart('phChart', 'pH Level', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.08)');
-        renderChart('ecChart', 'EC Level (mS/cm)', labels, ecs, '#059669', 'rgba(5, 150, 105, 0.08)');
+        renderChart('tempChart', 'อุณหภูมิ (°C)', labels, temps, '#F97316', 'rgba(249, 115, 22, 0.06)');
+        renderChart('phChart', 'pH', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.06)');
+        renderChart('ecChart', 'EC (mS/cm)', labels, ecs, '#10B981', 'rgba(16, 185, 129, 0.06)');
     } catch (err) {
         console.warn('fetchHistory:', err);
     }
@@ -650,16 +658,16 @@ async function fetchHistory() {
 
 function exportCsv() {
     if (!currentMachine) {
-        showToast('กรุณาเชื่อมต่อสถานีก่อนส่งออกข้อมูล', 'error');
+        showToast('กรุณาเชื่อมต่อเครื่องก่อนดาวน์โหลดข้อมูล', 'error');
         return;
     }
     if (!lastHistoryRecords || lastHistoryRecords.length === 0) {
-        showToast('ไม่มีข้อมูลในวันที่เลือกสำหรับส่งออก', 'error');
+        showToast('ไม่มีข้อมูลในวันที่เลือก', 'error');
         return;
     }
 
     const selectedDate = document.getElementById('datePicker').value || localDateKey(new Date());
-    const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'EC_mS_cm'];
+    const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH', 'EC_mS_cm'];
     const rows = lastHistoryRecords.map(r => [
         currentMachine,
         new Date(r.recorded_at).toLocaleString('th-TH', { hour12: false }),
@@ -673,12 +681,12 @@ function exportCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `water_telemetry_${currentMachine}_${selectedDate}.csv`;
+    a.download = `water_data_${currentMachine}_${selectedDate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast(`ส่งออกไฟล์ CSV สำเร็จ (${lastHistoryRecords.length} รายการ)`, 'success');
+    showToast(`ดาวน์โหลด CSV สำเร็จ (${lastHistoryRecords.length} รายการ)`, 'success');
 }
 
 function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) {
@@ -700,7 +708,7 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
                 pointRadius: dataPoints.length > 80 ? 0 : 2.5,
                 pointHoverRadius: 5,
                 fill: true,
-                tension: 0.25
+                tension: 0.3
             }]
         },
         options: {
@@ -711,45 +719,22 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: '#0F172A',
-                    titleFont: { family: 'JetBrains Mono', size: 11 },
-                    bodyFont: { family: 'IBM Plex Sans Thai', size: 12 },
+                    titleFont: { family: 'Anuphan', size: 12 },
+                    bodyFont: { family: 'Anuphan', size: 12 },
                     padding: 10,
-                    cornerRadius: 4
+                    cornerRadius: 6
                 }
             },
             scales: {
                 y: {
-                    grid: { color: '#E2E8F0' },
-                    ticks: { font: { family: 'JetBrains Mono', size: 11 }, color: '#475569' }
+                    grid: { color: '#F1F5F9' },
+                    ticks: { font: { family: 'Inter', size: 11 }, color: '#64748B' }
                 },
                 x: {
-                    grid: { color: '#F1F5F9' },
-                    ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#64748B', maxTicksLimit: 12 }
+                    grid: { display: false },
+                    ticks: { font: { family: 'Inter', size: 11 }, color: '#94A3B8', maxTicksLimit: 10 }
                 }
             }
         }
     });
-}
-
-function updateOverallWaterStatus(data) {
-    const el = document.getElementById('overallWaterStatus');
-    if (!el) return;
-    const statuses = [
-        evaluateStatus('temp', data.current_temp).text,
-        evaluateStatus('ph', data.current_ph).text,
-        evaluateStatus('ec', data.current_ec).text
-    ];
-    if (statuses.includes('เกินเกณฑ์วิกฤต')) {
-        el.innerText = 'ภาพรวมคุณภาพน้ำ: เกินเกณฑ์วิกฤต (ควรเดินเครื่องบำบัด)';
-        el.className = 'px-3 py-1 rounded bg-rose-50 text-rose-800 border border-rose-300 font-semibold text-xs';
-    } else if (statuses.includes('เฝ้าระวัง')) {
-        el.innerText = 'ภาพรวมคุณภาพน้ำ: เฝ้าระวังค่าเบี่ยงเบน';
-        el.className = 'px-3 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300 font-semibold text-xs';
-    } else if (statuses.every(s => s === 'ปกติ (ตามเกณฑ์)')) {
-        el.innerText = 'ภาพรวมคุณภาพน้ำ: อยู่ในเกณฑ์มาตรฐานทั้งหมด';
-        el.className = 'px-3 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold text-xs';
-    } else {
-        el.innerText = 'ภาพรวมคุณภาพน้ำ: กำลังรับสัญญาณจากหัววัด';
-        el.className = 'px-3 py-1 rounded bg-slate-100 text-slate-600 border border-slate-200 font-semibold text-xs';
-    }
 }
