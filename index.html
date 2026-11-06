@@ -414,18 +414,28 @@
 
             <!-- 3. Actuator Control Panel (Ch 1: มอเตอร์, Ch 2: ปั๊มน้ำ, Ch 4: แผ่นอะลูมิเนียม) -->
             <div class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-6">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div class="flex items-center gap-2.5">
                         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
-                        <h2 class="font-display text-base font-bold text-slate-900">แผงควบคุมชุดขับเคลื่อนและระบบบำบัด</h2>
+                        <h2 class="font-display text-base font-bold text-slate-900">แผงควบคุมชุดขับเคลื่อนและระบบบำบัด (ซิงค์ทุกเครื่องแบบเรียลไทม์)</h2>
                     </div>
-                    <span class="text-xs text-slate-500">สั่งเปิด-ปิดแบบเรียลไทม์ (มอเตอร์และแผ่นอะลูมิเนียมมีระบบสลับการทำงาน ไม่เปิดพร้อมกัน)</span>
+                    <span class="text-xs text-slate-500">มอเตอร์และแผ่นอะลูมิเนียมสลับการทำงานอัตโนมัติ (ไม่เปิดพร้อมกัน)</span>
+                </div>
+
+                <!-- แถบแจ้งสถานะอุปกรณ์ที่กำลังเปิดทำงานให้ทุกเครื่องเห็นตรงกัน -->
+                <div id="activeEquipmentBanner" class="mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all">
+                    <div class="flex items-center gap-2">
+                        <span id="activeEquipmentDot" class="led-dot led-standby"></span>
+                        <span class="font-semibold text-slate-700">สถานะอุปกรณ์ปัจจุบัน:</span>
+                        <span id="activeEquipmentList" class="text-slate-600">ไม่มีอุปกรณ์กำลังทำงาน (หยุดพักทั้งหมด)</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400">ซิงค์สถานะตรงกันทุกหน้าจออัตโนมัติ</span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                     <!-- ช่องสัญญาณที่ 1: มอเตอร์ -->
-                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                    <div id="motor1Card" class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-display font-bold text-slate-900 text-sm">มอเตอร์ (Motor)</h3>
@@ -448,7 +458,7 @@
                     </div>
 
                     <!-- ช่องสัญญาณที่ 2: ปั๊มน้ำ -->
-                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                    <div id="motor2Card" class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-display font-bold text-slate-900 text-sm">ปั๊มน้ำ (Water Pump)</h3>
@@ -471,7 +481,7 @@
                     </div>
 
                     <!-- ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม -->
-                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40">
+                    <div id="pump2Card" class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-display font-bold text-slate-900 text-sm">แผ่นอะลูมิเนียม (Aluminum Plate)</h3>
@@ -607,8 +617,8 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=9"></script>
-    <script src="js/app.js?v=9"></script>
+    <script src="js/config.js?v=10"></script>
+    <script src="js/app.js?v=10"></script>
     <script>
         if (window.lucide) lucide.createIcons();
     </script>

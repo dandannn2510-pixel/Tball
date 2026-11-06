@@ -4,23 +4,25 @@
 
 const CONFIG = {
     // Google Apps Script Web App URL (ผูกกับ Google Sheets ของคุณ)
-    // ถ้า Deploy Apps Script ใหม่แล้วได้ URL ใหม่ ให้เปลี่ยนตรงนี้ + ใน server.js + api/index.js
     GAS_URL: "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec",
 
-    // Proxy path (server.js ตอนรันในเครื่อง / api/index.js บน Vercel)
+    // Proxy path (server.js ตอนรันในเครื่อง / บน Vercel)
     PROXY_URL: "/api",
 
-    // Request timeout (ms) - Apps Script บางครั้งตอบช้า
+    // หมายเลขเครื่องเริ่มต้น (ให้ทุกเครื่องที่เปิดเว็บเชื่อมต่อเข้าเครื่องเดียวกันอัตโนมัติ)
+    DEFAULT_MACHINE_ID: "ESP32-01",
+
+    // Request timeout (ms)
     REQUEST_TIMEOUT_MS: 25000,
 
-    // ดึงค่าเซนเซอร์ล่าสุดทุกๆ กี่ ms
-    POLL_INTERVAL_MS: 3000,
+    // ดึงค่าเซนเซอร์และสถานะสวิตช์ล่าสุดทุกๆ 2 วินาที เพื่อให้ทุกเครื่องซิงค์ตรงกันแบบเรียลไทม์
+    POLL_INTERVAL_MS: 2000,
 
     // รีเฟรชกราฟทุกๆ กี่ ms
     HISTORY_REFRESH_MS: 60000,
 
-    // หลังกดสวิตช์ จะไม่ให้ค่าจาก Sheet มาทับสวิตช์นั้นกี่ ms (กันสวิตช์เด้งกลับ)
-    SWITCH_LOCK_MS: 8000,
+    // หลังกดสวิตช์ จะล็อกสวิตช์ในเครื่องที่กดกี่ ms เพื่อรอให้คลาวด์บันทึกเสร็จ
+    SWITCH_LOCK_MS: 4500,
 
     // เกณฑ์แจ้งเตือน
     THRESHOLDS: {

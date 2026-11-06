@@ -11,18 +11,21 @@ let apiBase = null;
 let machineNotFoundWarned = false;
 let lastHistoryRecords = [];
 let lastServerData = null;
+let hasInitialSwitchSync = false;
 const switchLocks = {};
+const knownSwitchState = {};
+
+// ช่องทางการซิงค์ข้ามแท็บในเบราว์เซอร์เดียวกันแบบทันที (0ms)
+const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('seameo_switch_sync') : null;
 
 // ช่องสัญญาณที่ 1: มอเตอร์ | ช่องสัญญาณที่ 2: ปั๊มน้ำ | ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม
-// (ช่องสัญญาณที่ 3 ใช้แสดงผลระดับน้ำจากชีท)
 const DEVICES = [
-    { id: 'motor1Toggle', code: '1', name: 'มอเตอร์ (ช่อง 1)',         field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
-    { id: 'motor2Toggle', code: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
-    { id: 'pump2Toggle',  code: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
+    { id: 'motor1Toggle', cardId: 'motor1Card', code: '1', name: 'มอเตอร์ (ช่อง 1)',         field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
+    { id: 'motor2Toggle', cardId: 'motor2Card', code: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
+    { id: 'pump2Toggle',  cardId: 'pump2Card',  code: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
 ];
 
 // กฎ Interlock: มอเตอร์ (ช่อง 1) กับ แผ่นอะลูมิเนียม (ช่อง 4) ห้ามเปิดพร้อมกัน
-// ถ้าเปิดอันหนึ่ง อีกอันต้องดับอัตโนมัติ แต่สามารถปิด (OFF) พร้อมกันได้
 const EXCLUSIVE_PAIRS = {
     '1': '4',
     '4': '1'
@@ -69,8 +72,8 @@ async function resolveApiBase(force = false) {
 
 async function callApi(action, params = {}, method = 'GET') {
     const base = await resolveApiBase();
-    const query = new URLSearchParams({ action });
-    const options = { method };
+    const query = new URLSearchParams({ action, _t: Date.now() });
+    const options = { method, cache: 'no-store' };
 
     if (method === 'GET') {
         Object.entries(params).forEach(([k, v]) => query.append(k, v));
@@ -89,7 +92,7 @@ async function callApi(action, params = {}, method = 'GET') {
 }
 
 // ========================================================
-// Initialization
+// Initialization & Real-Time Listeners
 // ========================================================
 document.addEventListener('DOMContentLoaded', () => {
     const datePicker = document.getElementById('datePicker');
@@ -98,6 +101,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const machineInput = document.getElementById('machineIdInput');
     if (machineInput) {
         machineInput.addEventListener('keydown', e => { if (e.key === 'Enter') bindMachine(); });
+    }
+
+    // เมื่อสลับกลับมาเปิดหน้าเว็บ ให้ซิงค์สถานะสวิตช์ทันที
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && currentMachine) {
+            fetchCurrentData();
+        }
+    });
+
+    // ซิงค์ข้ามแท็บทันทีเมื่อมีการกดสวิตช์
+    if (syncChannel) {
+        syncChannel.onmessage = (ev) => {
+            const msg = ev.data;
+            if (!msg) return;
+            if (msg.type === 'MACHINE_CHANGED' && msg.machineId && msg.machineId !== currentMachine) {
+                document.getElementById('machineIdInput').value = msg.machineId;
+                bindMachine(msg.machineId, true);
+            } else if (msg.type === 'SWITCH_UPDATED' && msg.switches) {
+                applySwitchMap(msg.switches, true);
+            }
+        };
     }
 
     startSystemClock();
@@ -151,7 +175,6 @@ function formatNumber(value) {
     return parseFloat(value).toFixed(2);
 }
 
-// ดึงค่าระดับน้ำจาก Google Sheets (รองรับทั้งคอลัมน์ water_level และช่องที่ 3 pump1_command ใน MachineState)
 function extractWaterLevel(data) {
     if (!data) return null;
     const candidates = [
@@ -208,8 +231,31 @@ function hideAuthMessage() {
 }
 
 // ========================================================
-// Authentication
+// Authentication & Auto-Station Sync
 // ========================================================
+async function autoConnectSharedMachine() {
+    let targetMachine = localStorage.getItem('currentMachine') || '';
+    try {
+        const syncInfo = await callApi('get_sync_state');
+        if (syncInfo && syncInfo.active_machine_id) {
+            // ถ้าเครื่องนี้ยังไม่ได้ตั้งค่า หรือใช้ค่าเริ่มต้น ให้เกาะตามเครื่องล่าสุดที่ระบบใช้งานอยู่ทันที
+            if (!targetMachine) {
+                targetMachine = syncInfo.active_machine_id;
+            }
+        }
+    } catch (_) {}
+
+    if (!targetMachine) {
+        targetMachine = CONFIG.DEFAULT_MACHINE_ID || 'ESP32-01';
+    }
+
+    const input = document.getElementById('machineIdInput');
+    if (input) input.value = targetMachine;
+    if (targetMachine !== currentMachine) {
+        bindMachine(targetMachine, true);
+    }
+}
+
 function checkLoginStatus() {
     const userId = localStorage.getItem('userID');
     const username = localStorage.getItem('username');
@@ -220,12 +266,7 @@ function checkLoginStatus() {
         authScreen.classList.add('hidden');
         dashboardScreen.classList.remove('hidden');
         document.getElementById('displayUsername').innerText = username;
-
-        const savedMachine = localStorage.getItem('currentMachine');
-        if (savedMachine && savedMachine !== currentMachine) {
-            document.getElementById('machineIdInput').value = savedMachine;
-            bindMachine(savedMachine, true);
-        }
+        autoConnectSharedMachine();
     } else {
         authScreen.classList.remove('hidden');
         dashboardScreen.classList.add('hidden');
@@ -381,11 +422,14 @@ function resetDashboard() {
         const el = document.getElementById(d.id);
         if (el) el.checked = false;
         updateDeviceIndicator(d, false);
+        delete knownSwitchState[d.id];
     });
+    updateActiveEquipmentBanner();
     Object.values(charts).forEach(c => c.destroy());
     charts = {};
     lastHistoryRecords = [];
     lastServerData = null;
+    hasInitialSwitchSync = false;
     const lu = document.getElementById('lastUpdated');
     if (lu) lu.innerText = 'ยังไม่ได้เชื่อมต่อเครื่อง';
 }
@@ -404,6 +448,10 @@ function bindMachine(targetId, silent = false) {
     currentMachine = machineId;
     machineNotFoundWarned = false;
     localStorage.setItem('currentMachine', currentMachine);
+
+    if (syncChannel && !silent) {
+        try { syncChannel.postMessage({ type: 'MACHINE_CHANGED', machineId: currentMachine }); } catch (_) {}
+    }
 
     const badge = document.getElementById('connectionBadge');
     badge.innerText = `กำลังเชื่อมต่อ ${currentMachine}...`;
@@ -456,7 +504,7 @@ async function submitNewMachine(event) {
         }
         closeAddMachineModal();
         document.getElementById('machineIdInput').value = newId;
-        bindMachine(newId, true);
+        bindMachine(newId, false);
     } catch (err) {
         showToast(`เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
     } finally {
@@ -616,9 +664,7 @@ async function fetchCurrentData() {
         updateGaugeArc('phGaugeArc', data.current_ph, 14);
         updateGaugeArc('ecGaugeArc', data.current_ec, 4);
 
-        // อัปเดตการ์ดระดับน้ำ (ดึงข้อมูลจากชีท: current_water_level / water_level / ช่อง 3 pump1_command)
         updateWaterLevelCard(extractWaterLevel(data));
-
         updateOverallWaterStatus(data);
 
         syncSwitchesWithServer(data);
@@ -634,46 +680,100 @@ async function fetchCurrentData() {
 function updateDeviceIndicator(dev, isOn) {
     const led = document.getElementById(dev.ledId);
     const txt = document.getElementById(dev.textId);
+    const card = dev.cardId ? document.getElementById(dev.cardId) : null;
     if (led) led.className = isOn ? 'led-dot led-online' : 'led-dot led-standby';
     if (txt) {
         txt.innerText = isOn ? 'กำลังทำงาน (ON)' : 'หยุดพัก (OFF)';
         txt.className = isOn ? 'text-xs font-semibold text-emerald-600' : 'text-xs font-medium text-slate-500';
     }
+    if (card) {
+        card.className = isOn
+            ? 'border border-emerald-400 rounded-xl p-4 flex flex-col justify-between gap-4 bg-emerald-50/30 ring-1 ring-emerald-400/25 transition-all duration-200'
+            : 'border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200';
+    }
 }
 
-function syncSwitchesWithServer(data) {
-    const now = Date.now();
+// อัปเดตแถบแจ้งเตือนว่ามีอุปกรณ์ใดเปิดทำงานอยู่บ้าง ให้ทุกเครื่องที่เปิดเว็บเห็นชัดเจน
+function updateActiveEquipmentBanner() {
+    const banner = document.getElementById('activeEquipmentBanner');
+    const dot = document.getElementById('activeEquipmentDot');
+    const listEl = document.getElementById('activeEquipmentList');
+    if (!banner || !listEl || !dot) return;
+
+    const activeNames = [];
     DEVICES.forEach(dev => {
-        if (switchLocks[dev.id] && now - switchLocks[dev.id] < CONFIG.SWITCH_LOCK_MS) return;
+        const el = document.getElementById(dev.id);
+        if (el && el.checked) activeNames.push(dev.name);
+    });
+
+    if (activeNames.length > 0) {
+        banner.className = 'mb-5 px-4 py-3 rounded-xl border border-emerald-300 bg-emerald-50/70 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
+        dot.className = 'led-dot led-online';
+        listEl.innerHTML = activeNames.map(n =>
+            `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-semibold mr-1.5">${escapeHtml(n)}: เปิดทำงาน (ON)</span>`
+        ).join('');
+    } else {
+        banner.className = 'mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
+        dot.className = 'led-dot led-standby';
+        listEl.innerText = 'ไม่มีอุปกรณ์กำลังทำงาน (หยุดพักทั้งหมด)';
+    }
+}
+
+function applySwitchMap(data, fromBroadcast = false) {
+    const now = Date.now();
+    const changedRemote = [];
+
+    DEVICES.forEach(dev => {
+        if (!fromBroadcast && switchLocks[dev.id] && now - switchLocks[dev.id] < CONFIG.SWITCH_LOCK_MS) return;
         const el = document.getElementById(dev.id);
         if (el && data[dev.field] !== undefined) {
             const isOn = String(data[dev.field]) === dev.code;
+            const prev = knownSwitchState[dev.id];
+            if (hasInitialSwitchSync && prev !== undefined && prev !== isOn) {
+                changedRemote.push(`${dev.name}: ${isOn ? 'เปิดทำงาน (ON)' : 'หยุดพัก (OFF)'}`);
+            }
+            knownSwitchState[dev.id] = isOn;
             el.checked = isOn;
             updateDeviceIndicator(dev, isOn);
         }
     });
 
-    // ป้องกันกรณีในชีทมีค่าเปิดพร้อมกันทั้งช่อง 1 และช่อง 4 ให้ยึดตัวที่ไม่ได้ล็อกและปิดอีกตัว
+    // บังคับ Interlock บนหน้าจอเสมอ: ถ้าช่อง 1 และช่อง 4 เปิดคู่กัน ให้ปิดช่อง 4
     const m1El = document.getElementById('motor1Toggle');
     const p2El = document.getElementById('pump2Toggle');
     if (m1El && p2El && m1El.checked && p2El.checked) {
         const p2Dev = DEVICES.find(d => d.code === '4');
         p2El.checked = false;
+        knownSwitchState['pump2Toggle'] = false;
         if (p2Dev) updateDeviceIndicator(p2Dev, false);
+    }
+
+    hasInitialSwitchSync = true;
+    updateActiveEquipmentBanner();
+
+    if (changedRemote.length > 0) {
+        showToast(`ซิงค์สถานะสวิตช์: ${changedRemote.join(' | ')}`, 'info');
     }
 }
 
+function syncSwitchesWithServer(data) {
+    applySwitchMap(data, false);
+}
+
 // ========================================================
-// Actuator Controls (พร้อมระบบ Interlock ช่อง 1 กับ ช่อง 4)
+// Actuator Controls (พร้อมระบบ Interlock & ซิงค์ทุกเครื่อง)
 // ========================================================
 async function toggleDevice(elementId, onCommandCode) {
     const checkbox = document.getElementById(elementId);
     const dev = DEVICES.find(d => d.id === elementId);
 
     if (!currentMachine) {
-        checkbox.checked = !checkbox.checked;
-        showToast('กรุณาเชื่อมต่อเครื่องก่อนสั่งงานอุปกรณ์', 'error');
-        return;
+        await autoConnectSharedMachine();
+        if (!currentMachine) {
+            checkbox.checked = !checkbox.checked;
+            showToast('กรุณาเชื่อมต่อเครื่องก่อนสั่งงานอุปกรณ์', 'error');
+            return;
+        }
     }
 
     const isOn = checkbox.checked;
@@ -681,22 +781,33 @@ async function toggleDevice(elementId, onCommandCode) {
     const partnerDev = partnerCode ? DEVICES.find(d => d.code === partnerCode) : null;
     const partnerEl = partnerDev ? document.getElementById(partnerDev.id) : null;
 
-    // ตรวจสอบว่าต้องสั่งตัดการทำงานของคู่ตรงข้ามหรือไม่ (เมื่อเปิดช่อง 1 ต้องดับช่อง 4 / เมื่อเปิดช่อง 4 ต้องดับช่อง 1)
     let partnerWasOn = false;
     if (isOn && partnerDev && partnerEl) {
         partnerWasOn = partnerEl.checked || (lastServerData && String(lastServerData[partnerDev.field]) === partnerDev.code);
         partnerEl.checked = false;
         partnerEl.disabled = true;
+        knownSwitchState[partnerDev.id] = false;
         updateDeviceIndicator(partnerDev, false);
         switchLocks[partnerDev.id] = Date.now();
     }
 
     switchLocks[elementId] = Date.now();
+    knownSwitchState[elementId] = isOn;
     checkbox.disabled = true;
     if (dev) updateDeviceIndicator(dev, isOn);
+    updateActiveEquipmentBanner();
+
+    // กระจายสถานะไปยังแท็บอื่นทันที
+    if (syncChannel) {
+        const currentSwitchMap = {};
+        DEVICES.forEach(d => {
+            const el = document.getElementById(d.id);
+            currentSwitchMap[d.field] = (el && el.checked) ? d.code : '0';
+        });
+        try { syncChannel.postMessage({ type: 'SWITCH_UPDATED', switches: currentSwitchMap }); } catch (_) {}
+    }
 
     try {
-        // หากเปิดอุปกรณ์ที่มีคู่ Interlock ให้ส่งคำสั่งดับคู่ตรงข้ามลงชีทด้วยเสมอเพื่อความปลอดภัย 100%
         if (isOn && partnerDev) {
             await callApi('set_device_command', {
                 machine_id: currentMachine,
@@ -723,13 +834,17 @@ async function toggleDevice(elementId, onCommandCode) {
             }
         } else {
             checkbox.checked = !isOn;
+            knownSwitchState[elementId] = !isOn;
             if (dev) updateDeviceIndicator(dev, !isOn);
+            updateActiveEquipmentBanner();
             delete switchLocks[elementId];
             showToast(result.message || 'ไม่สามารถส่งคำสั่งได้', 'error');
         }
     } catch (err) {
         checkbox.checked = !isOn;
+        knownSwitchState[elementId] = !isOn;
         if (dev) updateDeviceIndicator(dev, !isOn);
+        updateActiveEquipmentBanner();
         delete switchLocks[elementId];
         showToast(`ส่งคำสั่งไม่สำเร็จ: ${err.message}`, 'error');
     } finally {
