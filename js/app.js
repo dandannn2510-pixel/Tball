@@ -1,5 +1,5 @@
 // ========================================================
-// WATERCLEANER — Water Quality Telemetry & Control System
+// SEAMEO — Water Quality Telemetry & Control System
 // ========================================================
 
 let currentMachine = '';
@@ -12,11 +12,12 @@ let machineNotFoundWarned = false;
 let lastHistoryRecords = [];
 const switchLocks = {};
 
+// ช่องสัญญาณที่ 1: มอเตอร์ | ช่องสัญญาณที่ 2: ปั๊มน้ำ | ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม
+// (ช่องสัญญาณที่ 3 ใช้แสดงผลระดับน้ำจากชีท)
 const DEVICES = [
-    { id: 'motor1Toggle', code: '1', name: 'Motor 1', field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
-    { id: 'motor2Toggle', code: '2', name: 'Motor 2', field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
-    { id: 'pump1Toggle',  code: '3', name: 'Pump 1',  field: 'pump1_command',  ledId: 'pump1Led',  textId: 'pump1StateText' },
-    { id: 'pump2Toggle',  code: '4', name: 'Pump 2',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
+    { id: 'motor1Toggle', code: '1', name: 'มอเตอร์ (ช่อง 1)',         field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
+    { id: 'motor2Toggle', code: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
+    { id: 'pump2Toggle',  code: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
 ];
 
 // ========================================================
@@ -140,6 +141,24 @@ function escapeHtml(str) {
 function formatNumber(value) {
     if (value === '' || value === null || value === undefined || isNaN(parseFloat(value))) return '--';
     return parseFloat(value).toFixed(2);
+}
+
+// ดึงค่าระดับน้ำจาก Google Sheets (รองรับทั้งคอลัมน์ water_level และช่องที่ 3 pump1_command ใน MachineState)
+function extractWaterLevel(data) {
+    if (!data) return null;
+    const candidates = [
+        data.current_water_level,
+        data.water_level,
+        data.current_level,
+        data.level,
+        data.pump1_command
+    ];
+    for (const val of candidates) {
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
+            return val;
+        }
+    }
+    return null;
 }
 
 function showToast(message, type = 'info') {
@@ -339,9 +358,14 @@ function stopPolling() {
 }
 
 function resetDashboard() {
-    ['tempCurrent', 'phCurrent', 'ecCurrent'].forEach(id => document.getElementById(id).innerText = '--');
-    ['tempStatus', 'phStatus', 'ecStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
-    ['tempGaugeArc', 'phGaugeArc', 'ecGaugeArc'].forEach(id => {
+    ['tempCurrent', 'phCurrent', 'ecCurrent', 'levelCurrent'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = '--';
+    });
+    const unitEl = document.getElementById('levelUnit');
+    if (unitEl) unitEl.innerText = '%';
+    ['tempStatus', 'phStatus', 'ecStatus', 'levelStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
+    ['tempGaugeArc', 'phGaugeArc', 'ecGaugeArc', 'levelGaugeArc'].forEach(id => {
         const arc = document.getElementById(id);
         if (arc) arc.style.strokeDashoffset = '144.5';
     });
@@ -437,13 +461,34 @@ async function submitNewMachine(event) {
 // ========================================================
 function evaluateStatus(type, value) {
     const none = { text: 'รอข้อมูล', badgeClass: 'bg-slate-100 text-slate-500' };
-    if (value === null || value === undefined || value === '' || isNaN(parseFloat(value))) return none;
+    if (value === null || value === undefined || value === '') return none;
 
-    const num = parseFloat(value);
-    const th = CONFIG.THRESHOLDS;
     const danger = { text: 'เกินเกณฑ์วิกฤต', badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200 font-semibold' };
     const risky = { text: 'เฝ้าระวัง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
     const safe = { text: 'ปกติ', badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold' };
+
+    if (type === 'level') {
+        const rawStr = String(value).trim();
+        const num = parseFloat(rawStr);
+        if (isNaN(num)) {
+            if (rawStr.includes('ต่ำ') || rawStr.toLowerCase().includes('low')) {
+                return { text: 'ระดับน้ำต่ำ', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
+            }
+            if (rawStr.includes('สูง') || rawStr.includes('ล้น') || rawStr.toLowerCase().includes('high')) {
+                return { text: 'ระดับน้ำสูง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
+            }
+            return safe;
+        }
+        const lowTh = (CONFIG.THRESHOLDS.level && CONFIG.THRESHOLDS.level.low) || 20;
+        const highTh = (CONFIG.THRESHOLDS.level && CONFIG.THRESHOLDS.level.high) || 95;
+        if (num < lowTh) return { text: 'ระดับน้ำต่ำ', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
+        if (num > highTh) return { text: 'ระดับน้ำสูง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
+        return safe;
+    }
+
+    const num = parseFloat(value);
+    if (isNaN(num)) return none;
+    const th = CONFIG.THRESHOLDS;
 
     if (type === 'temp') return num > th.temp.danger ? danger : num >= th.temp.risky ? risky : safe;
     if (type === 'ph') {
@@ -459,7 +504,7 @@ function updateBadge(id, stat) {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerText = stat.text;
-    el.className = `px-2.5 py-1 rounded-md text-xs transition-colors duration-200 ${stat.badgeClass}`;
+    el.className = `px-2.5 py-1 rounded-md text-xs transition-colors duration-200 shrink-0 ${stat.badgeClass}`;
 }
 
 function updateGaugeArc(arcId, value, maxVal) {
@@ -473,6 +518,33 @@ function updateGaugeArc(arcId, value, maxVal) {
     const pct = Math.max(0, Math.min(100, (num / maxVal) * 100));
     const offset = 144.5 - (pct / 100) * 144.5;
     arc.style.strokeDashoffset = offset.toFixed(1);
+}
+
+function updateWaterLevelCard(rawLevel) {
+    const valEl = document.getElementById('levelCurrent');
+    const unitEl = document.getElementById('levelUnit');
+    if (!valEl) return;
+
+    if (rawLevel === null || rawLevel === undefined || String(rawLevel).trim() === '') {
+        valEl.innerText = '--';
+        if (unitEl) unitEl.innerText = '%';
+        updateBadge('levelStatus', evaluateStatus('level', null));
+        updateGaugeArc('levelGaugeArc', null, 100);
+        return;
+    }
+
+    const str = String(rawLevel).trim();
+    const num = parseFloat(str);
+    if (!isNaN(num) && /^-?\d+(\.\d+)?%?$/.test(str)) {
+        valEl.innerText = Number.isInteger(num) ? String(num) : num.toFixed(1);
+        if (unitEl) unitEl.innerText = '%';
+        updateGaugeArc('levelGaugeArc', num, 100);
+    } else {
+        valEl.innerText = str;
+        if (unitEl) unitEl.innerText = '';
+        updateGaugeArc('levelGaugeArc', !isNaN(num) ? num : 75, 100);
+    }
+    updateBadge('levelStatus', evaluateStatus('level', rawLevel));
 }
 
 function updateOverallWaterStatus(data) {
@@ -532,6 +604,10 @@ async function fetchCurrentData() {
         updateGaugeArc('tempGaugeArc', data.current_temp, 50);
         updateGaugeArc('phGaugeArc', data.current_ph, 14);
         updateGaugeArc('ecGaugeArc', data.current_ec, 4);
+
+        // อัปเดตการ์ดระดับน้ำ (ดึงข้อมูลจากชีท: current_water_level / water_level / ช่อง 3 pump1_command)
+        updateWaterLevelCard(extractWaterLevel(data));
+
         updateOverallWaterStatus(data);
 
         syncSwitchesWithServer(data);
@@ -688,7 +764,7 @@ function exportCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `watercleaner_${currentMachine}_${selectedDate}.csv`;
+    a.download = `seameo_${currentMachine}_${selectedDate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

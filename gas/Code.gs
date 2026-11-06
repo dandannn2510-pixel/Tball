@@ -67,7 +67,7 @@ function doPost(e) {
        if(stateData[i][0] == machineId) { isExist = true; break; }
     }
     if(!isExist) {
-       // แถวเริ่มต้น: machineId, temp, ph, ec, m1, m2, p1, p2, date
+       // แถวเริ่มต้น: machineId, temp, ph, ec, m1(มอเตอร์), m2(ปั๊มน้ำ), waterLevel(ช่อง3), p2(แผ่นอะลูมิเนียม), date
        sheetState.appendRow([machineId, 0, 0, 0, '0', '0', '0', '0', new Date()]);
     }
     
@@ -83,6 +83,7 @@ function doPost(e) {
     const temp = e.parameter.temperature || 0;
     const ph = e.parameter.ph || 0;
     const ec = e.parameter.ec || 0;
+    const waterLevel = e.parameter.water_level ?? e.parameter.level ?? null;
     const now = new Date();
 
     let data = sheetState.getDataRange().getValues();
@@ -99,40 +100,43 @@ function doPost(e) {
     if (rowIndex > -1) {
       // อัปเดตค่า Sensor (Col B, C, D) และเวลาล่าสุด (Col I)
       sheetState.getRange(rowIndex, 2, 1, 3).setValues([[temp, ph, ec]]);
+      if (waterLevel !== null) {
+        sheetState.getRange(rowIndex, 7).setValue(waterLevel);
+      }
       sheetState.getRange(rowIndex, 9).setValue(now);
       
-      // ดึงสถานะคำสั่ง 4 ช่องกลับมา (Col E, F, G, H)
+      // ดึงสถานะคำสั่งและค่าระดับน้ำ (Col E=ช่อง1 มอเตอร์, Col F=ช่อง2 ปั๊มน้ำ, Col G=ช่อง3 ระดับน้ำ, Col H=ช่อง4 แผ่นอะลูมิเนียม)
       m1 = sheetState.getRange(rowIndex, 5).getValue().toString();
       m2 = sheetState.getRange(rowIndex, 6).getValue().toString();
       p1 = sheetState.getRange(rowIndex, 7).getValue().toString();
       p2 = sheetState.getRange(rowIndex, 8).getValue().toString();
     } else {
-      sheetState.appendRow([machineId, temp, ph, ec, '0', '0', '0', '0', now]);
+      sheetState.appendRow([machineId, temp, ph, ec, '0', '0', waterLevel !== null ? waterLevel : '0', '0', now]);
     }
 
     // บันทึก History
     const sheetHistory = SpreadsheetApp.openById(SHEET_ID).getSheetByName('SensorHistory');
     sheetHistory.appendRow([machineId, temp, ph, ec, now]);
 
-    // ส่ง JSON 4 ช่องกลับไปให้บอร์ดไมโครคอนโทรลเลอร์
+    // ส่ง JSON กลับไปให้บอร์ดไมโครคอนโทรลเลอร์
     return ContentService.createTextOutput(JSON.stringify({
       status: "success", 
-      m1: m1, // "1" หรือ "0"
-      m2: m2, // "2" หรือ "0"
-      p1: p1, // "3" หรือ "0"
-      p2: p2  // "4" หรือ "0"
+      m1: m1, // ช่อง 1 มอเตอร์ ("1" หรือ "0")
+      m2: m2, // ช่อง 2 ปั๊มน้ำ ("2" หรือ "0")
+      p1: p1, // ช่อง 3 ระดับน้ำ
+      p2: p2  // ช่อง 4 แผ่นอะลูมิเนียม ("4" หรือ "0")
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
   // ==========================================
-  // ส่วนระบบสั่งสวิตช์ 4 ปุ่มจากหน้าเว็บ
+  // ส่วนระบบสั่งสวิตช์จากหน้าเว็บ (ช่อง 1, 2, 4)
   // ==========================================
   if (action === 'set_device_command') {
     const machineId = e.parameter.machine_id;
-    const command = e.parameter.command;       // "1", "2", "3", "4" หรือ "0"
-    const deviceType = e.parameter.device_type; // "1", "2", "3", "4"
+    const command = e.parameter.command;       // "1", "2", "4" หรือ "0"
+    const deviceType = e.parameter.device_type; // "1", "2", "4"
     
-    // กำหนด Column ปลายทาง: 1->Col 5, 2->Col 6, 3->Col 7, 4->Col 8
+    // กำหนด Column ปลายทาง: 1->Col 5 (E), 2->Col 6 (F), 3->Col 7 (G), 4->Col 8 (H)
     let colMap = { "1": 5, "2": 6, "3": 7, "4": 8 };
     let targetCol = colMap[deviceType];
 
@@ -165,7 +169,11 @@ function updateCommand(machineId, colIndex, command) {
 function doGet(e) {
   const action = (e && e.parameter) ? e.parameter.action : null;
 
-  // ส่งข้อมูลเซนเซอร์และสถานะสวิตช์ทั้ง 4 ตัวให้หน้าเว็บ
+  if (action === 'ping') {
+    return ContentService.createTextOutput(JSON.stringify({status: "ok"})).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ส่งข้อมูลเซนเซอร์ (อุณหภูมิ, pH, EC, ระดับน้ำ) และสถานะสวิตช์ให้หน้าเว็บ
   if (action === 'get_current') {
     const sheetState = SpreadsheetApp.openById(SHEET_ID).getSheetByName('MachineState');
     let data = sheetState.getDataRange().getValues();
@@ -178,6 +186,7 @@ function doGet(e) {
           motor1_command: data[i][4],
           motor2_command: data[i][5],
           pump1_command: data[i][6],
+          current_water_level: data[i][9] !== undefined && data[i][9] !== '' ? data[i][9] : data[i][6],
           pump2_command: data[i][7]
         })).setMimeType(ContentService.MimeType.JSON);
       }
@@ -199,4 +208,3 @@ function doGet(e) {
 
   return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Invalid GET action"})).setMimeType(ContentService.MimeType.JSON);
 }
-

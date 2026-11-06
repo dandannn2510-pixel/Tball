@@ -1,5 +1,5 @@
 // ========================================================
-// Configuration for Smart Sensor & Control Dashboard
+// Configuration for SEAMEO Smart Sensor & Control Dashboard
 // ========================================================
 
 const CONFIG = {
@@ -26,6 +26,7 @@ const CONFIG = {
     THRESHOLDS: {
         temp: { danger: 40, risky: 35 },
         ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 },
-        ec: { danger: 3.0, risky: 2.0 }
+        ec: { danger: 3.0, risky: 2.0 },
+        level: { low: 20, high: 95 }
     }
 };

@@ -1,14 +1,15 @@
 {
-  "name": "watercleaner",
+  "name": "seameo",
   "version": "1.0.0",
   "private": true,
-  "description": "Smart Sensor & IoT Control Dashboard for Google Sheets and Vercel",
+  "description": "SEAMEO Smart Sensor & IoT Control Dashboard for Google Sheets and Vercel",
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js"
   },
   "keywords": [
+    "seameo",
     "iot",
     "dashboard",
     "esp32",
