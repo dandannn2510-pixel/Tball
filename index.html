@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SEAMEO — ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23071324' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M32 12 C32 12 18 29 18 39 C18 46.7 24.3 53 32 53 C39.7 53 46 46.7 46 39 C46 29 32 12 32 12 Z' fill='url(%23g)'/%3E%3Cpath d='M22 39 Q27 34 32 39 T42 39' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23071324' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M32 12 C32 12 18 29 18 39 C18 46.7 24.3 53 32 53 C39.7 53 46 46.7 46 39 C46 29 32 12 32 12 Z' fill='url(%23g)'/%3E%3Cpath d='M22 39 Q27 34 32 39 T42 39' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700&family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700&family=Kanit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -34,48 +38,58 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+
         .font-mono-num {
             font-family: 'Kanit', sans-serif;
             font-variant-numeric: tabular-nums;
             letter-spacing: normal;
         }
+
         .graphic-title {
             font-family: 'Kanit', sans-serif;
             letter-spacing: normal;
             line-height: 1.32;
         }
+
         .graphic-num {
             font-family: 'Kanit', sans-serif;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.02em;
             line-height: 1.05;
         }
+
         .led-dot {
             width: 8px;
             height: 8px;
             border-radius: 9999px;
             display: inline-block;
         }
+
         .led-online {
             background-color: #10B981;
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
         }
+
         .led-standby {
             background-color: #94A3B8;
         }
+
         .led-error {
             background-color: #EF4444;
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
+
         .gauge-arc {
             transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
         }
     </style>
 </head>
+
 <body class="min-h-screen flex flex-col selection:bg-sky-700 selection:text-white">
 
     <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full">
+    </div>
 
     <!-- ===================================================================== -->
     <!-- 1. SPLIT-SCREEN LOGIN PORTAL                                          -->
@@ -83,14 +97,12 @@
     <div id="authScreen" class="min-h-screen flex flex-col lg:flex-row bg-white">
 
         <!-- LEFT COVER: Full-bleed Water Photography + Studio Editorial Typography -->
-        <div class="lg:w-[56%] xl:w-[60%] relative min-h-[440px] lg:min-h-screen flex flex-col justify-between p-8 sm:p-12 lg:p-16 xl:p-20 text-white overflow-hidden bg-[#061826]">
+        <div
+            class="lg:w-[56%] xl:w-[60%] relative min-h-[440px] lg:min-h-screen flex flex-col justify-between p-8 sm:p-12 lg:p-16 xl:p-20 text-white overflow-hidden bg-[#061826]">
 
             <!-- Real High-Resolution Water Surface Photography -->
-            <img
-                src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=85"
-                alt="Water Surface"
-                class="absolute inset-0 w-full h-full object-cover object-center scale-[1.02]"
-            />
+            <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=85"
+                alt="Water Surface" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.02]" />
 
             <!-- Editorial Gradient Vignette -->
             <div class="absolute inset-0 bg-gradient-to-b from-[#04121F]/65 via-[#061C2E]/40 to-[#030D17]/95"></div>
@@ -98,10 +110,14 @@
             <!-- Top Brand Mark -->
             <div class="relative z-10 flex items-center justify-between">
                 <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 13.5C8.5 10 12.2 10 16 13.5C19.8 17 23.5 17 27 13.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-                            <path d="M5 19.5C8.5 16 12.2 16 16 19.5C19.8 23 23.5 23 27 19.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity="0.6"/>
+                    <div
+                        class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" viewBox="0 0 32 32" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 13.5C8.5 10 12.2 10 16 13.5C19.8 17 23.5 17 27 13.5" stroke="currentColor"
+                                stroke-width="2.4" stroke-linecap="round" />
+                            <path d="M5 19.5C8.5 16 12.2 16 16 19.5C19.8 23 23.5 23 27 19.5" stroke="currentColor"
+                                stroke-width="2.4" stroke-linecap="round" opacity="0.6" />
                         </svg>
                     </div>
                     <div class="flex items-baseline gap-2.5">
@@ -109,12 +125,14 @@
                         <span class="text-xs font-normal text-white/60">Water Telemetry</span>
                     </div>
                 </div>
-                <span class="hidden sm:inline text-xs font-normal tracking-[0.15em] text-white/60 uppercase">TH // 2026</span>
+                <span class="hidden sm:inline text-xs font-normal tracking-[0.15em] text-white/60 uppercase">TH //
+                    2026</span>
             </div>
 
             <!-- Bottom Editorial Typography Block -->
             <div class="relative z-10 mt-auto pt-16 max-w-2xl">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-normal text-sky-200 mb-5">
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-normal text-sky-200 mb-5">
                     <span>SEAMEO Smart Water Quality Monitoring &amp; Control</span>
                 </div>
 
@@ -124,7 +142,8 @@
                 </h1>
 
                 <p class="text-sm sm:text-base text-white/75 leading-relaxed font-normal mt-5 max-w-lg">
-                    ผสานการตรวจวัดค่าทางกายภาพและเคมีของน้ำพร้อมระดับน้ำเข้ากับระบบควบคุมอัตโนมัติ รายงานผลและสั่งการผ่านคลาวด์แบบเรียลไทม์
+                    ผสานการตรวจวัดค่าทางกายภาพและเคมีของน้ำพร้อมระดับน้ำเข้ากับระบบควบคุมอัตโนมัติ
+                    รายงานผลและสั่งการผ่านคลาวด์แบบเรียลไทม์
                 </p>
 
                 <!-- Editorial Numbered Specification Strip (4 Parameters) -->
@@ -205,7 +224,8 @@
                     <button type="submit" id="authSubmitBtn"
                         class="w-full py-3.5 px-5 rounded-full bg-slate-900 hover:bg-sky-900 text-white text-sm font-medium transition flex items-center justify-between group shadow-sm">
                         <span id="authSubmitText" class="pl-1">เข้าสู่แผงควบคุมระบบ</span>
-                        <span class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                        <span
+                            class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
                             <i data-lucide="arrow-up-right" class="w-4 h-4 text-white"></i>
                         </span>
                     </button>
@@ -221,7 +241,8 @@
             </div>
 
             <!-- Bottom Subtle Caption -->
-            <div class="text-xs font-normal text-slate-400 flex items-center justify-between pt-4 border-t border-slate-100">
+            <div
+                class="text-xs font-normal text-slate-400 flex items-center justify-between pt-4 border-t border-slate-100">
                 <span>SEAMEO SYSTEM</span>
                 <span class="tracking-widest">v4.0</span>
             </div>
@@ -237,28 +258,36 @@
         <header class="bg-[#071526] text-white border-b border-sky-900/60 sticky top-0 z-30 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-sky-400" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 13C7.5 9.5 11.5 9.5 16 13C20.5 16.5 24.5 16.5 28 13" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-                            <path d="M4 20C7.5 16.5 11.5 16.5 16 20C20.5 23.5 24.5 23.5 28 20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity="0.65"/>
+                    <div
+                        class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-sky-400" viewBox="0 0 32 32" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 13C7.5 9.5 11.5 9.5 16 13C20.5 16.5 24.5 16.5 28 13" stroke="currentColor"
+                                stroke-width="2.6" stroke-linecap="round" />
+                            <path d="M4 20C7.5 16.5 11.5 16.5 16 20C20.5 23.5 24.5 23.5 28 20" stroke="currentColor"
+                                stroke-width="2.6" stroke-linecap="round" opacity="0.65" />
                         </svg>
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="font-display font-bold text-sm tracking-wider text-white">SEAMEO</span>
-                            <span class="text-[10px] font-mono-num uppercase px-2 py-0.5 rounded bg-sky-500/20 text-sky-300">LIVE</span>
+                            <span
+                                class="text-[10px] font-mono-num uppercase px-2 py-0.5 rounded bg-sky-500/20 text-sky-300">LIVE</span>
                         </div>
-                        <h1 class="font-display text-xs sm:text-sm text-slate-300">ระบบตรวจวัดคุณภาพน้ำและควบคุมชุดบำบัดอัตโนมัติ</h1>
+                        <h1 class="font-display text-xs sm:text-sm text-slate-300">
+                            ระบบตรวจวัดคุณภาพน้ำและควบคุมชุดบำบัดอัตโนมัติ</h1>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2.5 sm:gap-3">
-                    <div class="hidden lg:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs font-mono-num text-slate-200">
+                    <div
+                        class="hidden lg:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs font-mono-num text-slate-200">
                         <i data-lucide="clock" class="w-3.5 h-3.5 text-sky-400"></i>
                         <span id="systemClock">--:--:--</span>
                     </div>
 
-                    <div class="hidden sm:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 py-1.5 px-3 rounded-lg text-xs">
+                    <div
+                        class="hidden sm:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 py-1.5 px-3 rounded-lg text-xs">
                         <span class="text-slate-400">ผู้ใช้งาน:</span>
                         <strong id="displayUsername" class="text-sky-300 font-semibold">OPERATOR</strong>
                     </div>
@@ -281,7 +310,8 @@
         <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-7 space-y-6 flex-1">
 
             <!-- 1. Station Selector & Status Bar -->
-            <div class="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div
+                class="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div class="flex flex-wrap items-center gap-3">
                     <label class="text-xs font-bold text-slate-700">หมายเลขเครื่อง (Machine ID):</label>
                     <div class="flex items-center gap-2">
@@ -296,7 +326,8 @@
                     <span id="connectionBadge" class="hidden px-2.5 py-1 text-xs rounded-md font-medium"></span>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-between lg:justify-end gap-4 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 text-xs">
+                <div
+                    class="flex flex-wrap items-center justify-between lg:justify-end gap-4 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 text-xs">
                     <div id="overallWaterStatus" class="px-3 py-1 rounded-md bg-slate-100 text-slate-600 font-semibold">
                         ภาพรวมคุณภาพน้ำ: รอการเชื่อมต่อเครื่อง
                     </div>
@@ -316,20 +347,26 @@
                     <div class="p-5">
                         <div class="flex items-start justify-between gap-2">
                             <div>
-                                <h3 class="font-display text-base font-bold text-slate-900">อุณหภูมิน้ำ (Temperature)</h3>
+                                <h3 class="font-display text-base font-bold text-slate-900">อุณหภูมิน้ำ (Temperature)
+                                </h3>
                                 <p class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ &lt; 35.0 °C</p>
                             </div>
-                            <span id="tempStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            <span id="tempStatus"
+                                class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
                         </div>
 
                         <div class="mt-6 mb-1 flex items-end justify-between gap-3">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="tempCurrent" class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
+                                <span id="tempCurrent"
+                                    class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
                                 <span class="text-sm font-mono-num font-semibold text-slate-400">°C</span>
                             </div>
                             <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
-                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
-                                <path id="tempGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F97316" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10"
+                                    stroke-linecap="round" />
+                                <path id="tempGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none"
+                                    stroke="#F97316" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5"
+                                    stroke-dashoffset="144.5" />
                             </svg>
                         </div>
                     </div>
@@ -344,17 +381,22 @@
                                 <h3 class="font-display text-base font-bold text-slate-900">ความเป็นกรด-ด่าง (pH)</h3>
                                 <p class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ 5.50 – 7.50 pH</p>
                             </div>
-                            <span id="phStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            <span id="phStatus"
+                                class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
                         </div>
 
                         <div class="mt-6 mb-1 flex items-end justify-between gap-3">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="phCurrent" class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
+                                <span id="phCurrent"
+                                    class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
                                 <span class="text-sm font-mono-num font-semibold text-slate-400">pH</span>
                             </div>
                             <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
-                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
-                                <path id="phGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#0284C7" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10"
+                                    stroke-linecap="round" />
+                                <path id="phGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none"
+                                    stroke="#0284C7" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5"
+                                    stroke-dashoffset="144.5" />
                             </svg>
                         </div>
                     </div>
@@ -366,20 +408,26 @@
                     <div class="p-5">
                         <div class="flex items-start justify-between gap-2">
                             <div>
-                                <h3 class="font-display text-base font-bold text-slate-900">ค่าการนำไฟฟ้า (EC Level)</h3>
+                                <h3 class="font-display text-base font-bold text-slate-900">ค่าการนำไฟฟ้า (EC Level)
+                                </h3>
                                 <p class="text-xs text-slate-400 mt-0.5">เกณฑ์ปกติ &le; 2.00 mS/cm</p>
                             </div>
-                            <span id="ecStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            <span id="ecStatus"
+                                class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
                         </div>
 
                         <div class="mt-6 mb-1 flex items-end justify-between gap-3">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="ecCurrent" class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
+                                <span id="ecCurrent"
+                                    class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
                                 <span class="text-sm font-mono-num font-semibold text-slate-400">mS/cm</span>
                             </div>
                             <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
-                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
-                                <path id="ecGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#10B981" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10"
+                                    stroke-linecap="round" />
+                                <path id="ecGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none"
+                                    stroke="#10B981" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5"
+                                    stroke-dashoffset="144.5" />
                             </svg>
                         </div>
                     </div>
@@ -394,17 +442,22 @@
                                 <h3 class="font-display text-base font-bold text-slate-900">ระดับน้ำ (Water Level)</h3>
                                 <p class="text-xs text-slate-400 mt-0.5">ดึงข้อมูลจากชีท (ช่องสัญญาณที่ 3)</p>
                             </div>
-                            <span id="levelStatus" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            <span id="levelStatus"
+                                class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
                         </div>
 
                         <div class="mt-6 mb-1 flex items-end justify-between gap-3">
                             <div class="flex items-baseline gap-1.5">
-                                <span id="levelCurrent" class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
+                                <span id="levelCurrent"
+                                    class="graphic-num text-4xl sm:text-[42px] font-medium text-slate-900">--</span>
                                 <span id="levelUnit" class="text-sm font-mono-num font-semibold text-slate-400">%</span>
                             </div>
                             <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
-                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10" stroke-linecap="round"/>
-                                <path id="levelGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#06B6D4" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+                                <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F1F5F9" stroke-width="10"
+                                    stroke-linecap="round" />
+                                <path id="levelGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58" fill="none"
+                                    stroke="#06B6D4" stroke-width="10" stroke-linecap="round" stroke-dasharray="144.5"
+                                    stroke-dashoffset="144.5" />
                             </svg>
                         </div>
                     </div>
@@ -417,17 +470,21 @@
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div class="flex items-center gap-2.5">
                         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
-                        <h2 class="font-display text-base font-bold text-slate-900">แผงควบคุมชุดขับเคลื่อนและระบบบำบัด (ซิงค์ทุกเครื่องแบบเรียลไทม์)</h2>
+                        <h2 class="font-display text-base font-bold text-slate-900">แผงควบคุมชุดขับเคลื่อนและระบบบำบัด
+                            (ซิงค์ทุกเครื่องแบบเรียลไทม์)</h2>
                     </div>
-                    <span class="text-xs text-slate-500">มอเตอร์และแผ่นอะลูมิเนียมสลับการทำงานอัตโนมัติ (ไม่เปิดพร้อมกัน)</span>
+                    <span class="text-xs text-slate-500">มอเตอร์และแผ่นอะลูมิเนียมสลับการทำงานอัตโนมัติ
+                        (ไม่เปิดพร้อมกัน)</span>
                 </div>
 
                 <!-- แถบแจ้งสถานะอุปกรณ์ที่กำลังเปิดทำงานให้ทุกเครื่องเห็นตรงกัน -->
-                <div id="activeEquipmentBanner" class="mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all">
+                <div id="activeEquipmentBanner"
+                    class="mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all">
                     <div class="flex items-center gap-2">
                         <span id="activeEquipmentDot" class="led-dot led-standby"></span>
                         <span class="font-semibold text-slate-700">สถานะอุปกรณ์ปัจจุบัน:</span>
-                        <span id="activeEquipmentList" class="text-slate-600">ไม่มีอุปกรณ์กำลังทำงาน (หยุดพักทั้งหมด)</span>
+                        <span id="activeEquipmentList" class="text-slate-600">ไม่มีอุปกรณ์กำลังทำงาน
+                            (หยุดพักทั้งหมด)</span>
                     </div>
                     <span class="text-[11px] text-slate-400">ซิงค์สถานะตรงกันทุกหน้าจออัตโนมัติ</span>
                 </div>
@@ -435,70 +492,89 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                     <!-- ช่องสัญญาณที่ 1: มอเตอร์ -->
-                    <div id="motor1Card" class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
+                    <div id="motor1Card"
+                        class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-display font-bold text-slate-900 text-sm">มอเตอร์ (Motor)</h3>
                                 <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 1</p>
                             </div>
-                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sky-700">
+                            <div
+                                class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sky-700">
                                 <i data-lucide="cog" class="w-4 h-4"></i>
                             </div>
                         </div>
                         <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span id="motor1Led" class="led-dot led-standby"></span>
-                                <span id="motor1StateText" class="text-xs font-medium text-slate-500">หยุดพัก (OFF)</span>
+                                <span id="motor1StateText" class="text-xs font-medium text-slate-500">หยุดพัก
+                                    (OFF)</span>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')"
+                                    class="sr-only peer">
+                                <div
+                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600">
+                                </div>
                             </label>
                         </div>
                     </div>
 
                     <!-- ช่องสัญญาณที่ 2: ปั๊มน้ำ -->
-                    <div id="motor2Card" class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
+                    <div id="motor2Card"
+                        class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-display font-bold text-slate-900 text-sm">ปั๊มน้ำ (Water Pump)</h3>
                                 <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 2</p>
                             </div>
-                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-teal-600">
+                            <div
+                                class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-teal-600">
                                 <i data-lucide="waves" class="w-4 h-4"></i>
                             </div>
                         </div>
                         <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span id="motor2Led" class="led-dot led-standby"></span>
-                                <span id="motor2StateText" class="text-xs font-medium text-slate-500">หยุดพัก (OFF)</span>
+                                <span id="motor2StateText" class="text-xs font-medium text-slate-500">หยุดพัก
+                                    (OFF)</span>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')"
+                                    class="sr-only peer">
+                                <div
+                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600">
+                                </div>
                             </label>
                         </div>
                     </div>
 
-                    <!-- ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม -->
-                    <div id="pump2Card" class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
+                    <!-- ช่องสัญญาณที่ 3: แผ่นอะลูมิเนียม -->
+                    <div id="pump2Card"
+                        class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-display font-bold text-slate-900 text-sm">แผ่นอะลูมิเนียม (Aluminum Plate)</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 4</p>
+                                <h3 class="font-display font-bold text-slate-900 text-sm">แผ่นอะลูมิเนียม (Aluminum
+                                    Plate)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">ช่องสัญญาณที่ 3</p>
                             </div>
-                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-indigo-600">
+                            <div
+                                class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-indigo-600">
                                 <i data-lucide="layers" class="w-4 h-4"></i>
                             </div>
                         </div>
                         <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span id="pump2Led" class="led-dot led-standby"></span>
-                                <span id="pump2StateText" class="text-xs font-medium text-slate-500">หยุดพัก (OFF)</span>
+                                <span id="pump2StateText" class="text-xs font-medium text-slate-500">หยุดพัก
+                                    (OFF)</span>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                <input type="checkbox" id="pump2Toggle" onchange="toggleDevice('pump2Toggle', '4')"
+                                    class="sr-only peer">
+                                <div
+                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600">
+                                </div>
                             </label>
                         </div>
                     </div>
@@ -510,7 +586,8 @@
             <div class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-6 space-y-6">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div>
-                        <h2 class="font-display text-base font-bold text-slate-900">กราฟวิเคราะห์แนวโน้มข้อมูลย้อนหลัง</h2>
+                        <h2 class="font-display text-base font-bold text-slate-900">กราฟวิเคราะห์แนวโน้มข้อมูลย้อนหลัง
+                        </h2>
                         <p id="historyCount" class="text-xs text-slate-400 mt-0.5">ข้อมูลที่บันทึก: 0 รายการ</p>
                     </div>
 
@@ -537,7 +614,8 @@
                                 <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
                                 <h3 class="font-display text-xs font-bold text-slate-800">แนวโน้มอุณหภูมิน้ำ (°C)</h3>
                             </div>
-                            <div id="tempStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                            <div id="tempStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- |
+                                สูงสุด: --</div>
                         </div>
                         <div class="h-56 relative">
                             <canvas id="tempChart"></canvas>
@@ -549,9 +627,11 @@
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <div class="flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
-                                <h3 class="font-display text-xs font-bold text-slate-800">แนวโน้มความเป็นกรด-ด่าง (pH)</h3>
+                                <h3 class="font-display text-xs font-bold text-slate-800">แนวโน้มความเป็นกรด-ด่าง (pH)
+                                </h3>
                             </div>
-                            <div id="phStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                            <div id="phStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- |
+                                สูงสุด: --</div>
                         </div>
                         <div class="h-56 relative">
                             <canvas id="phChart"></canvas>
@@ -563,9 +643,11 @@
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <div class="flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                                <h3 class="font-display text-xs font-bold text-slate-800">แนวโน้มค่าการนำไฟฟ้า (mS/cm)</h3>
+                                <h3 class="font-display text-xs font-bold text-slate-800">แนวโน้มค่าการนำไฟฟ้า (mS/cm)
+                                </h3>
                             </div>
-                            <div id="ecStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --</div>
+                            <div id="ecStats" class="text-xs font-mono-num text-slate-500">ต่ำสุด: -- | เฉลี่ย: -- |
+                                สูงสุด: --</div>
                         </div>
                         <div class="h-56 relative">
                             <canvas id="ecChart"></canvas>
@@ -590,7 +672,8 @@
     <div id="addMachineModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-xl border border-slate-200 shadow-2xl overflow-hidden">
             <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
-                <h3 class="font-display text-sm font-bold text-slate-900">เพิ่มเครื่องตรวจวัดใหม่ (Register Machine ID)</h3>
+                <h3 class="font-display text-sm font-bold text-slate-900">เพิ่มเครื่องตรวจวัดใหม่ (Register Machine ID)
+                </h3>
                 <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-700">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -623,4 +706,5 @@
         if (window.lucide) lucide.createIcons();
     </script>
 </body>
+
 </html>
