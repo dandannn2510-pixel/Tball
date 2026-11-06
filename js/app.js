@@ -10,6 +10,7 @@ let isLoginMode = true;
 let apiBase = null;
 let machineNotFoundWarned = false;
 let lastHistoryRecords = [];
+let lastServerData = null;
 const switchLocks = {};
 
 // ช่องสัญญาณที่ 1: มอเตอร์ | ช่องสัญญาณที่ 2: ปั๊มน้ำ | ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม
@@ -19,6 +20,13 @@ const DEVICES = [
     { id: 'motor2Toggle', code: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
     { id: 'pump2Toggle',  code: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
 ];
+
+// กฎ Interlock: มอเตอร์ (ช่อง 1) กับ แผ่นอะลูมิเนียม (ช่อง 4) ห้ามเปิดพร้อมกัน
+// ถ้าเปิดอันหนึ่ง อีกอันต้องดับอัตโนมัติ แต่สามารถปิด (OFF) พร้อมกันได้
+const EXCLUSIVE_PAIRS = {
+    '1': '4',
+    '4': '1'
+};
 
 // ========================================================
 // API Layer
@@ -377,6 +385,7 @@ function resetDashboard() {
     Object.values(charts).forEach(c => c.destroy());
     charts = {};
     lastHistoryRecords = [];
+    lastServerData = null;
     const lu = document.getElementById('lastUpdated');
     if (lu) lu.innerText = 'ยังไม่ได้เชื่อมต่อเครื่อง';
 }
@@ -590,6 +599,8 @@ async function fetchCurrentData() {
             return;
         }
 
+        lastServerData = data;
+
         badge.innerText = `ออนไลน์: ${currentMachine}`;
         badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block';
 
@@ -641,10 +652,19 @@ function syncSwitchesWithServer(data) {
             updateDeviceIndicator(dev, isOn);
         }
     });
+
+    // ป้องกันกรณีในชีทมีค่าเปิดพร้อมกันทั้งช่อง 1 และช่อง 4 ให้ยึดตัวที่ไม่ได้ล็อกและปิดอีกตัว
+    const m1El = document.getElementById('motor1Toggle');
+    const p2El = document.getElementById('pump2Toggle');
+    if (m1El && p2El && m1El.checked && p2El.checked) {
+        const p2Dev = DEVICES.find(d => d.code === '4');
+        p2El.checked = false;
+        if (p2Dev) updateDeviceIndicator(p2Dev, false);
+    }
 }
 
 // ========================================================
-// Actuator Controls
+// Actuator Controls (พร้อมระบบ Interlock ช่อง 1 กับ ช่อง 4)
 // ========================================================
 async function toggleDevice(elementId, onCommandCode) {
     const checkbox = document.getElementById(elementId);
@@ -657,11 +677,36 @@ async function toggleDevice(elementId, onCommandCode) {
     }
 
     const isOn = checkbox.checked;
+    const partnerCode = EXCLUSIVE_PAIRS[onCommandCode];
+    const partnerDev = partnerCode ? DEVICES.find(d => d.code === partnerCode) : null;
+    const partnerEl = partnerDev ? document.getElementById(partnerDev.id) : null;
+
+    // ตรวจสอบว่าต้องสั่งตัดการทำงานของคู่ตรงข้ามหรือไม่ (เมื่อเปิดช่อง 1 ต้องดับช่อง 4 / เมื่อเปิดช่อง 4 ต้องดับช่อง 1)
+    let partnerWasOn = false;
+    if (isOn && partnerDev && partnerEl) {
+        partnerWasOn = partnerEl.checked || (lastServerData && String(lastServerData[partnerDev.field]) === partnerDev.code);
+        partnerEl.checked = false;
+        partnerEl.disabled = true;
+        updateDeviceIndicator(partnerDev, false);
+        switchLocks[partnerDev.id] = Date.now();
+    }
+
     switchLocks[elementId] = Date.now();
     checkbox.disabled = true;
     if (dev) updateDeviceIndicator(dev, isOn);
 
     try {
+        // หากเปิดอุปกรณ์ที่มีคู่ Interlock ให้ส่งคำสั่งดับคู่ตรงข้ามลงชีทด้วยเสมอเพื่อความปลอดภัย 100%
+        if (isOn && partnerDev) {
+            await callApi('set_device_command', {
+                machine_id: currentMachine,
+                command: '0',
+                device_type: partnerDev.code
+            }, 'POST');
+            if (lastServerData) lastServerData[partnerDev.field] = '0';
+            switchLocks[partnerDev.id] = Date.now();
+        }
+
         const result = await callApi('set_device_command', {
             machine_id: currentMachine,
             command: isOn ? onCommandCode : '0',
@@ -669,8 +714,13 @@ async function toggleDevice(elementId, onCommandCode) {
         }, 'POST');
 
         if (result.status === 'success') {
+            if (lastServerData && dev) lastServerData[dev.field] = isOn ? onCommandCode : '0';
             switchLocks[elementId] = Date.now();
-            showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'เปิดทำงาน (ON)' : 'หยุดพัก (OFF)'}`, 'success');
+            if (isOn && partnerDev && partnerWasOn) {
+                showToast(`${dev ? dev.name : 'อุปกรณ์'}: เปิดทำงาน (ON) — ปิด${partnerDev.name}อัตโนมัติ`, 'success');
+            } else {
+                showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'เปิดทำงาน (ON)' : 'หยุดพัก (OFF)'}`, 'success');
+            }
         } else {
             checkbox.checked = !isOn;
             if (dev) updateDeviceIndicator(dev, !isOn);
@@ -684,6 +734,7 @@ async function toggleDevice(elementId, onCommandCode) {
         showToast(`ส่งคำสั่งไม่สำเร็จ: ${err.message}`, 'error');
     } finally {
         checkbox.disabled = false;
+        if (partnerEl) partnerEl.disabled = false;
     }
 }
 
