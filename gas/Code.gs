@@ -156,11 +156,13 @@ function updateCommand(machineId, colIndex, command) {
   let data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] == machineId) {
-      // Interlock: ถ้าเปิดช่อง 1 (Col 5) ให้ปิดช่อง 4 (Col 8) และถ้าเปิดช่อง 4 (Col 8) ให้ปิดช่อง 1 (Col 5)
-      if (colIndex === 5 && String(command) !== '0') {
-        sheet.getRange(i + 1, 8).setValue('0');
-      } else if (colIndex === 8 && String(command) !== '0') {
-        sheet.getRange(i + 1, 5).setValue('0');
+      // Interlock (Active-Low: '0' = เปิดทำงาน, '1'/'4' = ปิดทำงาน):
+      // ถ้าเปิดช่อง 1 (Col 5 เป็น '0') ให้ปิดช่อง 4 (Col 8 เป็น '4')
+      // ถ้าเปิดช่อง 4 (Col 8 เป็น '0') ให้ปิดช่อง 1 (Col 5 เป็น '1')
+      if (colIndex === 5 && String(command) === '0') {
+        sheet.getRange(i + 1, 8).setValue('4');
+      } else if (colIndex === 8 && String(command) === '0') {
+        sheet.getRange(i + 1, 5).setValue('1');
       }
       sheet.getRange(i + 1, colIndex).setValue(command);
       return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);

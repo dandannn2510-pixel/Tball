@@ -19,10 +19,13 @@ const knownSwitchState = {};
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('seameo_switch_sync') : null;
 
 // ช่องสัญญาณที่ 1: มอเตอร์ | ช่องสัญญาณที่ 2: ปั๊มน้ำ | ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม
+// บอร์ดรีเลย์ทำงานแบบ Active-Low:
+// - เมื่อสวิตช์หน้าเว็บ "เปิด (ON)"  -> ส่งค่า onCmd ('0') เพื่อให้เครื่องเปิดทำงานจริง
+// - เมื่อสวิตช์หน้าเว็บ "ปิด (OFF)" -> ส่งค่า offCmd ('1', '2', '4') เพื่อให้เครื่องหยุดทำงานจริง
 const DEVICES = [
-    { id: 'motor1Toggle', cardId: 'motor1Card', code: '1', name: 'มอเตอร์ (ช่อง 1)',         field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
-    { id: 'motor2Toggle', cardId: 'motor2Card', code: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
-    { id: 'pump2Toggle',  cardId: 'pump2Card',  code: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
+    { id: 'motor1Toggle', cardId: 'motor1Card', code: '1', onCmd: '0', offCmd: '1', name: 'มอเตอร์ (ช่อง 1)',         field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
+    { id: 'motor2Toggle', cardId: 'motor2Card', code: '2', onCmd: '0', offCmd: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
+    { id: 'pump2Toggle',  cardId: 'pump2Card',  code: '4', onCmd: '0', offCmd: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
 ];
 
 // กฎ Interlock: มอเตอร์ (ช่อง 1) กับ แผ่นอะลูมิเนียม (ช่อง 4) ห้ามเปิดพร้อมกัน
@@ -30,6 +33,11 @@ const EXCLUSIVE_PAIRS = {
     '1': '4',
     '4': '1'
 };
+
+function isDeviceOnValue(dev, rawVal) {
+    if (rawVal === undefined || rawVal === null || rawVal === '') return false;
+    return String(rawVal).trim() === dev.onCmd;
+}
 
 // ========================================================
 // API Layer
@@ -103,14 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
         machineInput.addEventListener('keydown', e => { if (e.key === 'Enter') bindMachine(); });
     }
 
-    // เมื่อสลับกลับมาเปิดหน้าเว็บ ให้ซิงค์สถานะสวิตช์ทันที
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && currentMachine) {
             fetchCurrentData();
         }
     });
 
-    // ซิงค์ข้ามแท็บทันทีเมื่อมีการกดสวิตช์
     if (syncChannel) {
         syncChannel.onmessage = (ev) => {
             const msg = ev.data;
@@ -238,7 +244,6 @@ async function autoConnectSharedMachine() {
     try {
         const syncInfo = await callApi('get_sync_state');
         if (syncInfo && syncInfo.active_machine_id) {
-            // ถ้าเครื่องนี้ยังไม่ได้ตั้งค่า หรือใช้ค่าเริ่มต้น ให้เกาะตามเครื่องล่าสุดที่ระบบใช้งานอยู่ทันที
             if (!targetMachine) {
                 targetMachine = syncInfo.active_machine_id;
             }
@@ -693,7 +698,6 @@ function updateDeviceIndicator(dev, isOn) {
     }
 }
 
-// อัปเดตแถบแจ้งเตือนว่ามีอุปกรณ์ใดเปิดทำงานอยู่บ้าง ให้ทุกเครื่องที่เปิดเว็บเห็นชัดเจน
 function updateActiveEquipmentBanner() {
     const banner = document.getElementById('activeEquipmentBanner');
     const dot = document.getElementById('activeEquipmentDot');
@@ -727,7 +731,7 @@ function applySwitchMap(data, fromBroadcast = false) {
         if (!fromBroadcast && switchLocks[dev.id] && now - switchLocks[dev.id] < CONFIG.SWITCH_LOCK_MS) return;
         const el = document.getElementById(dev.id);
         if (el && data[dev.field] !== undefined) {
-            const isOn = String(data[dev.field]) === dev.code;
+            const isOn = isDeviceOnValue(dev, data[dev.field]);
             const prev = knownSwitchState[dev.id];
             if (hasInitialSwitchSync && prev !== undefined && prev !== isOn) {
                 changedRemote.push(`${dev.name}: ${isOn ? 'เปิดทำงาน (ON)' : 'หยุดพัก (OFF)'}`);
@@ -761,7 +765,7 @@ function syncSwitchesWithServer(data) {
 }
 
 // ========================================================
-// Actuator Controls (พร้อมระบบ Interlock & ซิงค์ทุกเครื่อง)
+// Actuator Controls (Active-Low Relay: เปิดส่ง '0', ปิดส่ง '1'/'2'/'4')
 // ========================================================
 async function toggleDevice(elementId, onCommandCode) {
     const checkbox = document.getElementById(elementId);
@@ -777,13 +781,15 @@ async function toggleDevice(elementId, onCommandCode) {
     }
 
     const isOn = checkbox.checked;
+    const targetCmd = isOn ? dev.onCmd : dev.offCmd; // เปิดส่ง '0', ปิดส่งรหัสช่อง ('1','2','4')
+
     const partnerCode = EXCLUSIVE_PAIRS[onCommandCode];
     const partnerDev = partnerCode ? DEVICES.find(d => d.code === partnerCode) : null;
     const partnerEl = partnerDev ? document.getElementById(partnerDev.id) : null;
 
     let partnerWasOn = false;
     if (isOn && partnerDev && partnerEl) {
-        partnerWasOn = partnerEl.checked || (lastServerData && String(lastServerData[partnerDev.field]) === partnerDev.code);
+        partnerWasOn = partnerEl.checked || (lastServerData && isDeviceOnValue(partnerDev, lastServerData[partnerDev.field]));
         partnerEl.checked = false;
         partnerEl.disabled = true;
         knownSwitchState[partnerDev.id] = false;
@@ -802,30 +808,31 @@ async function toggleDevice(elementId, onCommandCode) {
         const currentSwitchMap = {};
         DEVICES.forEach(d => {
             const el = document.getElementById(d.id);
-            currentSwitchMap[d.field] = (el && el.checked) ? d.code : '0';
+            currentSwitchMap[d.field] = (el && el.checked) ? d.onCmd : d.offCmd;
         });
         try { syncChannel.postMessage({ type: 'SWITCH_UPDATED', switches: currentSwitchMap }); } catch (_) {}
     }
 
     try {
+        // หากเปิดอุปกรณ์ที่มีคู่ Interlock ให้ส่งคำสั่งปิดคู่ตรงข้าม (offCmd = '1' หรือ '4') ลงชีทเสมอ
         if (isOn && partnerDev) {
             await callApi('set_device_command', {
                 machine_id: currentMachine,
-                command: '0',
+                command: partnerDev.offCmd,
                 device_type: partnerDev.code
             }, 'POST');
-            if (lastServerData) lastServerData[partnerDev.field] = '0';
+            if (lastServerData) lastServerData[partnerDev.field] = partnerDev.offCmd;
             switchLocks[partnerDev.id] = Date.now();
         }
 
         const result = await callApi('set_device_command', {
             machine_id: currentMachine,
-            command: isOn ? onCommandCode : '0',
+            command: targetCmd,
             device_type: onCommandCode
         }, 'POST');
 
         if (result.status === 'success') {
-            if (lastServerData && dev) lastServerData[dev.field] = isOn ? onCommandCode : '0';
+            if (lastServerData && dev) lastServerData[dev.field] = targetCmd;
             switchLocks[elementId] = Date.now();
             if (isOn && partnerDev && partnerWasOn) {
                 showToast(`${dev ? dev.name : 'อุปกรณ์'}: เปิดทำงาน (ON) — ปิด${partnerDev.name}อัตโนมัติ`, 'success');
