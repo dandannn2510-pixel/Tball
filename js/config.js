@@ -10,7 +10,7 @@ const CONFIG = {
     PROXY_URL: "/api",
 
     // หมายเลขเครื่องเริ่มต้น (ให้ทุกเครื่องที่เปิดเว็บเชื่อมต่อเข้าเครื่องเดียวกันอัตโนมัติ)
-    DEFAULT_MACHINE_ID: "ESP32-01",
+    DEFAULT_MACHINE_ID: "00002",
 
     // Request timeout (ms)
     REQUEST_TIMEOUT_MS: 25000,
@@ -24,11 +24,10 @@ const CONFIG = {
     // หลังกดสวิตช์ จะล็อกสวิตช์ในเครื่องที่กดกี่ ms เพื่อรอให้คลาวด์บันทึกเสร็จ
     SWITCH_LOCK_MS: 4500,
 
-    // เกณฑ์แจ้งเตือน
+    // เกณฑ์แจ้งเตือน (อุณหภูมิน้ำ, pH, ระดับน้ำ)
     THRESHOLDS: {
         temp: { danger: 40, risky: 35 },
         ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 },
-        ec: { danger: 3.0, risky: 2.0 },
         level: { low: 20, high: 95 }
     }
 };

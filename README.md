@@ -1,6 +1,6 @@
 # Smart Sensor & IoT Control Dashboard
 
-ระบบ Dashboard ติดตามค่าเซนเซอร์ (Temperature, pH, EC) และสั่งงาน Relay/มอเตอร์ 4 ช่อง สำหรับ ESP32 / Arduino พร้อมเชื่อมต่อ Google Sheets และรองรับการ Deploy ขึ้น **Vercel** ผ่าน **GitHub**
+ระบบ Dashboard ติดตามค่าเซนเซอร์ (Temperature, pH, Water Level) และสั่งงานชุดรีเลย์/วาล์วน้ำไฟฟ้า 4 ช่อง สำหรับ ESP32 / Arduino พร้อมเชื่อมต่อ Google Sheets และรองรับการ Deploy ขึ้น **Vercel** ผ่าน **GitHub**
 
 ---
 

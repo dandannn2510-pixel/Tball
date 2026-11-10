@@ -18,25 +18,86 @@ const knownSwitchState = {};
 // ช่องทางการซิงค์ข้ามแท็บในเบราว์เซอร์เดียวกันแบบทันที (0ms)
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('seameo_switch_sync') : null;
 
-// ช่องสัญญาณที่ 1: มอเตอร์ | ช่องสัญญาณที่ 2: ปั๊มน้ำ | ช่องสัญญาณที่ 4: แผ่นอะลูมิเนียม
-// บอร์ดรีเลย์ทำงานแบบ Active-Low:
-// - เมื่อสวิตช์หน้าเว็บ "เปิด (ON)"  -> ส่งค่า onCmd ('0') เพื่อให้เครื่องเปิดทำงานจริง
-// - เมื่อสวิตช์หน้าเว็บ "ปิด (OFF)" -> ส่งค่า offCmd ('1', '2', '4') เพื่อให้เครื่องหยุดทำงานจริง
+// ลำดับอุปกรณ์ควบคุมทั้ง 4 ช่อง:
+// 1. มอเตอร์ (ช่อง 1 / motor1) | 2. ปั๊มน้ำ (ช่อง 2 / motor2) | 3. แผ่นอะลูมิเนียม (ช่อง 3 / pump1) | 4. วาล์วน้ำไฟฟ้า (ช่อง 4 / pump2)
 const DEVICES = [
-    { id: 'motor1Toggle', cardId: 'motor1Card', code: '1', onCmd: '0', offCmd: '1', name: 'มอเตอร์ (ช่อง 1)',         field: 'motor1_command', ledId: 'motor1Led', textId: 'motor1StateText' },
-    { id: 'motor2Toggle', cardId: 'motor2Card', code: '2', onCmd: '0', offCmd: '2', name: 'ปั๊มน้ำ (ช่อง 2)',          field: 'motor2_command', ledId: 'motor2Led', textId: 'motor2StateText' },
-    { id: 'pump2Toggle',  cardId: 'pump2Card',  code: '4', onCmd: '0', offCmd: '4', name: 'แผ่นอะลูมิเนียม (ช่อง 4)',  field: 'pump2_command',  ledId: 'pump2Led',  textId: 'pump2StateText' }
+    {
+        id: 'motor1Toggle',
+        cardId: 'motor1Card',
+        code: '1',
+        onCmd: '0',
+        offCmd: '1',
+        name: 'มอเตอร์ (ช่อง 1)',
+        field: 'motor1_command',
+        ledId: 'motor1Led',
+        textId: 'motor1StateText',
+        onLabel: 'กำลังทำงาน (ON)',
+        offLabel: 'หยุดพัก (OFF)',
+        activeTheme: 'emerald'
+    },
+    {
+        id: 'motor2Toggle',
+        cardId: 'motor2Card',
+        code: '2',
+        onCmd: '0',
+        offCmd: '2',
+        name: 'ปั๊มน้ำ (ช่อง 2)',
+        field: 'motor2_command',
+        ledId: 'motor2Led',
+        textId: 'motor2StateText',
+        onLabel: 'กำลังทำงาน (ON)',
+        offLabel: 'หยุดพัก (OFF)',
+        activeTheme: 'emerald'
+    },
+    {
+        id: 'pump1Toggle',
+        cardId: 'pump1Card',
+        code: '3',
+        onCmd: '0',
+        offCmd: '3',
+        name: 'แผ่นอะลูมิเนียม (pump1)',
+        field: 'pump1_command',
+        ledId: 'pump1Led',
+        textId: 'pump1StateText',
+        onLabel: 'กำลังทำงาน (ON)',
+        offLabel: 'หยุดพัก (OFF)',
+        activeTheme: 'emerald'
+    },
+    {
+        id: 'valveToggle',
+        cardId: 'valveCard',
+        code: '4',
+        onCmd: '0',
+        offCmd: '4',
+        name: 'วาล์วน้ำไฟฟ้า (pump2)',
+        field: 'pump2_command',
+        ledId: 'valveLed',
+        textId: 'valveStateText',
+        onLabel: 'เปิดวาล์ว (OPEN)',
+        offLabel: 'ปิดวาล์ว (CLOSED)',
+        activeTheme: 'sky'
+    }
 ];
 
-// กฎ Interlock: มอเตอร์ (ช่อง 1) กับ แผ่นอะลูมิเนียม (ช่อง 4) ห้ามเปิดพร้อมกัน
+// กฎ Interlock: มอเตอร์ (ช่อง 1 / motor1) กับ แผ่นอะลูมิเนียม (ช่อง 3 / pump1) ห้ามเปิดพร้อมกัน
 const EXCLUSIVE_PAIRS = {
-    '1': '4',
-    '4': '1'
+    '1': '3',
+    '3': '1'
 };
 
 function isDeviceOnValue(dev, rawVal) {
     if (rawVal === undefined || rawVal === null || rawVal === '') return false;
     return String(rawVal).trim() === dev.onCmd;
+}
+
+function getLocalValveFallback(machineId) {
+    if (!machineId) return '5';
+    return localStorage.getItem(`seameo_valve_${machineId}`) || '5';
+}
+
+function setLocalValveFallback(machineId, cmd) {
+    if (!machineId) return;
+    localStorage.setItem(`seameo_valve_${machineId}`, String(cmd));
 }
 
 // ========================================================
@@ -155,7 +216,7 @@ async function checkApiStatus() {
     el.innerHTML = '<span class="led-dot led-standby"></span><span>กำลังตรวจสอบฐานข้อมูล...</span>';
     try {
         await resolveApiBase(true);
-        el.className = 'text-xs text-emerald-700 font-medium flex items-center gap-2';
+        el.className = 'text-xs text-emerald-700 font-semibold flex items-center gap-2';
         el.innerHTML = '<span class="led-dot led-online"></span><span>เชื่อมต่อฐานข้อมูลพร้อมใช้งาน</span>';
     } catch (err) {
         el.className = 'text-xs text-rose-600 flex items-center gap-2';
@@ -187,8 +248,7 @@ function extractWaterLevel(data) {
         data.current_water_level,
         data.water_level,
         data.current_level,
-        data.level,
-        data.pump1_command
+        data.level
     ];
     for (const val of candidates) {
         if (val !== undefined && val !== null && String(val).trim() !== '') {
@@ -281,7 +341,7 @@ function checkLoginStatus() {
 
 function switchAuthTab(mode) {
     isLoginMode = (mode === 'login');
-    const active = 'pb-3 pr-6 text-sm font-bold border-b-2 border-slate-900 text-slate-900 transition-all';
+    const active = 'pb-3 pr-6 text-sm font-bold border-b-2 border-sky-600 text-sky-700 transition-all';
     const inactive = 'pb-3 px-6 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all';
 
     document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่ระบบควบคุม' : 'สมัครสมาชิกผู้ใช้งานใหม่';
@@ -412,16 +472,20 @@ function stopPolling() {
 }
 
 function resetDashboard() {
-    ['tempCurrent', 'phCurrent', 'ecCurrent', 'levelCurrent'].forEach(id => {
+    ['tempCurrent', 'phCurrent', 'levelCurrent'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerText = '--';
     });
     const unitEl = document.getElementById('levelUnit');
     if (unitEl) unitEl.innerText = '%';
-    ['tempStatus', 'phStatus', 'ecStatus', 'levelStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
-    ['tempGaugeArc', 'phGaugeArc', 'ecGaugeArc', 'levelGaugeArc'].forEach(id => {
+    ['tempStatus', 'phStatus', 'levelStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
+    ['tempGaugeArc', 'phGaugeArc', 'levelGaugeArc'].forEach(id => {
         const arc = document.getElementById(id);
         if (arc) arc.style.strokeDashoffset = '144.5';
+    });
+    ['tempBarFill', 'phBarFill', 'levelBarFill'].forEach(id => {
+        const bar = document.getElementById(id);
+        if (bar) bar.style.width = '0%';
     });
     DEVICES.forEach(d => {
         const el = document.getElementById(d.id);
@@ -460,7 +524,7 @@ function bindMachine(targetId, silent = false) {
 
     const badge = document.getElementById('connectionBadge');
     badge.innerText = `กำลังเชื่อมต่อ ${currentMachine}...`;
-    badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-amber-50 text-amber-700 border border-amber-200 inline-block';
+    badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-amber-50 text-amber-700 border border-amber-200 inline-block';
 
     if (!silent) showToast(`กำลังซิงค์ข้อมูลจาก ${currentMachine}...`, 'info');
 
@@ -519,7 +583,7 @@ async function submitNewMachine(event) {
 }
 
 // ========================================================
-// Real-time Telemetry Polling & Gauges
+// Real-time Telemetry Polling & Gauges (Temp, pH, Water Level)
 // ========================================================
 function evaluateStatus(type, value) {
     const none = { text: 'รอข้อมูล', badgeClass: 'bg-slate-100 text-slate-500' };
@@ -558,7 +622,6 @@ function evaluateStatus(type, value) {
         if (num < th.ph.riskyMin || num > th.ph.riskyMax) return risky;
         return safe;
     }
-    if (type === 'ec') return num > th.ec.danger ? danger : num > th.ec.risky ? risky : safe;
     return none;
 }
 
@@ -569,17 +632,19 @@ function updateBadge(id, stat) {
     el.className = `px-2.5 py-1 rounded-md text-xs transition-colors duration-200 shrink-0 ${stat.badgeClass}`;
 }
 
-function updateGaugeArc(arcId, value, maxVal) {
+function updateGaugeAndBar(arcId, barId, value, maxVal) {
     const arc = document.getElementById(arcId);
-    if (!arc) return;
+    const bar = document.getElementById(barId);
     const num = parseFloat(value);
     if (isNaN(num)) {
-        arc.style.strokeDashoffset = '144.5';
+        if (arc) arc.style.strokeDashoffset = '144.5';
+        if (bar) bar.style.width = '0%';
         return;
     }
     const pct = Math.max(0, Math.min(100, (num / maxVal) * 100));
     const offset = 144.5 - (pct / 100) * 144.5;
-    arc.style.strokeDashoffset = offset.toFixed(1);
+    if (arc) arc.style.strokeDashoffset = offset.toFixed(1);
+    if (bar) bar.style.width = `${pct.toFixed(1)}%`;
 }
 
 function updateWaterLevelCard(rawLevel) {
@@ -591,7 +656,7 @@ function updateWaterLevelCard(rawLevel) {
         valEl.innerText = '--';
         if (unitEl) unitEl.innerText = '%';
         updateBadge('levelStatus', evaluateStatus('level', null));
-        updateGaugeArc('levelGaugeArc', null, 100);
+        updateGaugeAndBar('levelGaugeArc', 'levelBarFill', null, 100);
         return;
     }
 
@@ -600,11 +665,11 @@ function updateWaterLevelCard(rawLevel) {
     if (!isNaN(num) && /^-?\d+(\.\d+)?%?$/.test(str)) {
         valEl.innerText = Number.isInteger(num) ? String(num) : num.toFixed(1);
         if (unitEl) unitEl.innerText = '%';
-        updateGaugeArc('levelGaugeArc', num, 100);
+        updateGaugeAndBar('levelGaugeArc', 'levelBarFill', num, 100);
     } else {
         valEl.innerText = str;
         if (unitEl) unitEl.innerText = '';
-        updateGaugeArc('levelGaugeArc', !isNaN(num) ? num : 75, 100);
+        updateGaugeAndBar('levelGaugeArc', 'levelBarFill', !isNaN(num) ? num : 75, 100);
     }
     updateBadge('levelStatus', evaluateStatus('level', rawLevel));
 }
@@ -612,23 +677,23 @@ function updateWaterLevelCard(rawLevel) {
 function updateOverallWaterStatus(data) {
     const el = document.getElementById('overallWaterStatus');
     if (!el) return;
-    const statuses = [
-        evaluateStatus('temp', data.current_temp).text,
-        evaluateStatus('ph', data.current_ph).text,
-        evaluateStatus('ec', data.current_ec).text
-    ];
+    const tempStat = evaluateStatus('temp', data.current_temp).text;
+    const phStat = evaluateStatus('ph', data.current_ph).text;
+    const levelStat = evaluateStatus('level', extractWaterLevel(data)).text;
+    const statuses = [tempStat, phStat, levelStat];
+
     if (statuses.includes('เกินเกณฑ์วิกฤต')) {
         el.innerText = 'ภาพรวมคุณภาพน้ำ: เกินเกณฑ์วิกฤต (ควรเดินเครื่องบำบัด)';
-        el.className = 'px-3 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-xs';
-    } else if (statuses.includes('เฝ้าระวัง')) {
+        el.className = 'px-3.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-xs';
+    } else if (statuses.includes('เฝ้าระวัง') || statuses.includes('ระดับน้ำต่ำ') || statuses.includes('ระดับน้ำสูง')) {
         el.innerText = 'ภาพรวมคุณภาพน้ำ: มีค่าอยู่ในเกณฑ์เฝ้าระวัง';
-        el.className = 'px-3 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-semibold text-xs';
+        el.className = 'px-3.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-semibold text-xs';
     } else if (statuses.every(s => s === 'ปกติ')) {
         el.innerText = 'ภาพรวมคุณภาพน้ำ: อยู่ในเกณฑ์ปกติทุกพารามิเตอร์';
-        el.className = 'px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-xs';
+        el.className = 'px-3.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-xs';
     } else {
         el.innerText = 'ภาพรวมคุณภาพน้ำ: กำลังรับข้อมูลจากเซนเซอร์';
-        el.className = 'px-3 py-1 rounded-md bg-slate-100 text-slate-600 font-semibold text-xs';
+        el.className = 'px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold text-xs';
     }
 }
 
@@ -644,7 +709,7 @@ async function fetchCurrentData() {
 
         if (!data || Object.keys(data).length === 0 || data.status === 'error') {
             badge.innerText = `ไม่พบเครื่อง: ${currentMachine}`;
-            badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-rose-50 text-rose-700 border border-rose-200 inline-block';
+            badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-700 border border-rose-200 inline-block';
             if (!machineNotFoundWarned) {
                 machineNotFoundWarned = true;
                 showToast(`ไม่พบเครื่อง "${currentMachine}" กด "+ เพิ่มเครื่องใหม่" เพื่อลงทะเบียน`, 'error');
@@ -652,22 +717,25 @@ async function fetchCurrentData() {
             return;
         }
 
+        if (data.valve_command === undefined || data.valve_command === null || data.valve_command === '') {
+            data.valve_command = getLocalValveFallback(currentMachine);
+        } else {
+            setLocalValveFallback(currentMachine, data.valve_command);
+        }
+
         lastServerData = data;
 
         badge.innerText = `ออนไลน์: ${currentMachine}`;
-        badge.className = 'px-2.5 py-1 text-xs rounded-md font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block';
+        badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block';
 
         document.getElementById('tempCurrent').innerText = formatNumber(data.current_temp);
         document.getElementById('phCurrent').innerText = formatNumber(data.current_ph);
-        document.getElementById('ecCurrent').innerText = formatNumber(data.current_ec);
 
         updateBadge('tempStatus', evaluateStatus('temp', data.current_temp));
         updateBadge('phStatus', evaluateStatus('ph', data.current_ph));
-        updateBadge('ecStatus', evaluateStatus('ec', data.current_ec));
 
-        updateGaugeArc('tempGaugeArc', data.current_temp, 50);
-        updateGaugeArc('phGaugeArc', data.current_ph, 14);
-        updateGaugeArc('ecGaugeArc', data.current_ec, 4);
+        updateGaugeAndBar('tempGaugeArc', 'tempBarFill', data.current_temp, 50);
+        updateGaugeAndBar('phGaugeArc', 'phBarFill', data.current_ph, 14);
 
         updateWaterLevelCard(extractWaterLevel(data));
         updateOverallWaterStatus(data);
@@ -686,15 +754,23 @@ function updateDeviceIndicator(dev, isOn) {
     const led = document.getElementById(dev.ledId);
     const txt = document.getElementById(dev.textId);
     const card = dev.cardId ? document.getElementById(dev.cardId) : null;
+    const isSky = dev.activeTheme === 'sky';
+
     if (led) led.className = isOn ? 'led-dot led-online' : 'led-dot led-standby';
     if (txt) {
-        txt.innerText = isOn ? 'กำลังทำงาน (ON)' : 'หยุดพัก (OFF)';
-        txt.className = isOn ? 'text-xs font-semibold text-emerald-600' : 'text-xs font-medium text-slate-500';
+        txt.innerText = isOn ? (dev.onLabel || 'กำลังทำงาน (ON)') : (dev.offLabel || 'หยุดพัก (OFF)');
+        txt.className = isOn
+            ? (isSky ? 'text-xs font-bold text-sky-700' : 'text-xs font-bold text-emerald-600')
+            : 'text-xs font-semibold text-slate-500';
     }
     if (card) {
-        card.className = isOn
-            ? 'border border-emerald-400 rounded-xl p-4 flex flex-col justify-between gap-4 bg-emerald-50/30 ring-1 ring-emerald-400/25 transition-all duration-200'
-            : 'border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/40 transition-all duration-200';
+        if (isOn) {
+            card.className = isSky
+                ? 'border-2 border-sky-400 rounded-xl p-4 flex flex-col justify-between gap-4 bg-sky-50/40 shadow-sm transition-all duration-200'
+                : 'border-2 border-emerald-400 rounded-xl p-4 flex flex-col justify-between gap-4 bg-emerald-50/40 shadow-sm transition-all duration-200';
+        } else {
+            card.className = 'border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/50 transition-all duration-200';
+        }
     }
 }
 
@@ -704,18 +780,27 @@ function updateActiveEquipmentBanner() {
     const listEl = document.getElementById('activeEquipmentList');
     if (!banner || !listEl || !dot) return;
 
-    const activeNames = [];
+    const activeItems = [];
     DEVICES.forEach(dev => {
         const el = document.getElementById(dev.id);
-        if (el && el.checked) activeNames.push(dev.name);
+        if (el && el.checked) {
+            activeItems.push({
+                name: dev.name,
+                label: dev.onLabel || 'เปิดทำงาน (ON)',
+                theme: dev.activeTheme
+            });
+        }
     });
 
-    if (activeNames.length > 0) {
-        banner.className = 'mb-5 px-4 py-3 rounded-xl border border-emerald-300 bg-emerald-50/70 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
+    if (activeItems.length > 0) {
+        banner.className = 'mb-5 px-4 py-3 rounded-xl border border-emerald-300 bg-emerald-50/80 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
         dot.className = 'led-dot led-online';
-        listEl.innerHTML = activeNames.map(n =>
-            `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-semibold mr-1.5">${escapeHtml(n)}: เปิดทำงาน (ON)</span>`
-        ).join('');
+        listEl.innerHTML = activeItems.map(item => {
+            const pillClass = item.theme === 'sky'
+                ? 'bg-sky-600 text-white'
+                : 'bg-emerald-600 text-white';
+            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${pillClass} font-semibold mr-1.5">${escapeHtml(item.name)}: ${escapeHtml(item.label)}</span>`;
+        }).join('');
     } else {
         banner.className = 'mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
         dot.className = 'led-dot led-standby';
@@ -734,7 +819,7 @@ function applySwitchMap(data, fromBroadcast = false) {
             const isOn = isDeviceOnValue(dev, data[dev.field]);
             const prev = knownSwitchState[dev.id];
             if (hasInitialSwitchSync && prev !== undefined && prev !== isOn) {
-                changedRemote.push(`${dev.name}: ${isOn ? 'เปิดทำงาน (ON)' : 'หยุดพัก (OFF)'}`);
+                changedRemote.push(`${dev.name}: ${isOn ? (dev.onLabel || 'เปิดทำงาน (ON)') : (dev.offLabel || 'หยุดพัก (OFF)')}`);
             }
             knownSwitchState[dev.id] = isOn;
             el.checked = isOn;
@@ -742,14 +827,14 @@ function applySwitchMap(data, fromBroadcast = false) {
         }
     });
 
-    // บังคับ Interlock บนหน้าจอเสมอ: ถ้าช่อง 1 และช่อง 4 เปิดคู่กัน ให้ปิดช่อง 4
+    // บังคับ Interlock บนหน้าจอเสมอ: ถ้ามอเตอร์ (ช่อง 1 / motor1) และแผ่นอะลูมิเนียม (ช่อง 3 / pump1) เปิดคู่กัน ให้ปิดแผ่นอะลูมิเนียม
     const m1El = document.getElementById('motor1Toggle');
-    const p2El = document.getElementById('pump2Toggle');
-    if (m1El && p2El && m1El.checked && p2El.checked) {
-        const p2Dev = DEVICES.find(d => d.code === '4');
-        p2El.checked = false;
-        knownSwitchState['pump2Toggle'] = false;
-        if (p2Dev) updateDeviceIndicator(p2Dev, false);
+    const p1El = document.getElementById('pump1Toggle');
+    if (m1El && p1El && m1El.checked && p1El.checked) {
+        const p1Dev = DEVICES.find(d => d.code === '3');
+        p1El.checked = false;
+        knownSwitchState['pump1Toggle'] = false;
+        if (p1Dev) updateDeviceIndicator(p1Dev, false);
     }
 
     hasInitialSwitchSync = true;
@@ -765,7 +850,7 @@ function syncSwitchesWithServer(data) {
 }
 
 // ========================================================
-// Actuator Controls (Active-Low Relay: เปิดส่ง '0', ปิดส่ง '1'/'2'/'4')
+// Actuator Controls (Active-Low Relay: เปิดส่ง '0', ปิดส่ง '1'/'2'/'3'/'4')
 // ========================================================
 async function toggleDevice(elementId, onCommandCode) {
     const checkbox = document.getElementById(elementId);
@@ -781,7 +866,7 @@ async function toggleDevice(elementId, onCommandCode) {
     }
 
     const isOn = checkbox.checked;
-    const targetCmd = isOn ? dev.onCmd : dev.offCmd; // เปิดส่ง '0', ปิดส่งรหัสช่อง ('1','2','4')
+    const targetCmd = isOn ? dev.onCmd : dev.offCmd;
 
     const partnerCode = EXCLUSIVE_PAIRS[onCommandCode];
     const partnerDev = partnerCode ? DEVICES.find(d => d.code === partnerCode) : null;
@@ -797,13 +882,17 @@ async function toggleDevice(elementId, onCommandCode) {
         switchLocks[partnerDev.id] = Date.now();
     }
 
+    const m1El = document.getElementById('motor1Toggle');
+    const vEl = document.getElementById('valveToggle');
+    const motor1ShouldStayOn = (onCommandCode === '4' && isOn && m1El && m1El.checked);
+    const valveShouldStayOn = (onCommandCode === '1' && isOn && vEl && vEl.checked);
+
     switchLocks[elementId] = Date.now();
     knownSwitchState[elementId] = isOn;
     checkbox.disabled = true;
     if (dev) updateDeviceIndicator(dev, isOn);
     updateActiveEquipmentBanner();
 
-    // กระจายสถานะไปยังแท็บอื่นทันที
     if (syncChannel) {
         const currentSwitchMap = {};
         DEVICES.forEach(d => {
@@ -814,7 +903,6 @@ async function toggleDevice(elementId, onCommandCode) {
     }
 
     try {
-        // หากเปิดอุปกรณ์ที่มีคู่ Interlock ให้ส่งคำสั่งปิดคู่ตรงข้าม (offCmd = '1' หรือ '4') ลงชีทเสมอ
         if (isOn && partnerDev) {
             await callApi('set_device_command', {
                 machine_id: currentMachine,
@@ -831,13 +919,30 @@ async function toggleDevice(elementId, onCommandCode) {
             device_type: onCommandCode
         }, 'POST');
 
+        if (motor1ShouldStayOn) {
+            switchLocks['motor1Toggle'] = Date.now();
+            await callApi('set_device_command', {
+                machine_id: currentMachine,
+                command: '0',
+                device_type: '1'
+            }, 'POST');
+        } else if (valveShouldStayOn) {
+            switchLocks['valveToggle'] = Date.now();
+            await callApi('set_device_command', {
+                machine_id: currentMachine,
+                command: '0',
+                device_type: '4'
+            }, 'POST');
+        }
+
         if (result.status === 'success') {
             if (lastServerData && dev) lastServerData[dev.field] = targetCmd;
             switchLocks[elementId] = Date.now();
+            const stateDesc = isOn ? (dev ? dev.onLabel : 'เปิดทำงาน (ON)') : (dev ? dev.offLabel : 'หยุดพัก (OFF)');
             if (isOn && partnerDev && partnerWasOn) {
-                showToast(`${dev ? dev.name : 'อุปกรณ์'}: เปิดทำงาน (ON) — ปิด${partnerDev.name}อัตโนมัติ`, 'success');
+                showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${stateDesc} — หยุดการทำงานของ${partnerDev.name}อัตโนมัติ`, 'success');
             } else {
-                showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${isOn ? 'เปิดทำงาน (ON)' : 'หยุดพัก (OFF)'}`, 'success');
+                showToast(`${dev ? dev.name : 'อุปกรณ์'}: ${stateDesc}`, 'success');
             }
         } else {
             checkbox.checked = !isOn;
@@ -895,18 +1000,23 @@ async function fetchHistory() {
         const countEl = document.getElementById('historyCount');
         if (countEl) countEl.innerText = `ข้อมูลที่บันทึก: ${filtered.length} รายการ`;
 
+        const currentLevelNumeric = lastServerData ? parseFloat(extractWaterLevel(lastServerData)) : NaN;
         const labels = filtered.map(d => new Date(d.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }));
         const temps = filtered.map(d => d.temperature);
         const phs = filtered.map(d => d.ph);
-        const ecs = filtered.map(d => d.ec);
+        const levels = filtered.map(d => {
+            const rawLv = d.water_level ?? d.level;
+            if (rawLv !== undefined && rawLv !== null && rawLv !== '') return rawLv;
+            return !isNaN(currentLevelNumeric) ? currentLevelNumeric : null;
+        });
 
         updateStatsLabel('tempStats', temps, '°C');
         updateStatsLabel('phStats', phs, 'pH');
-        updateStatsLabel('ecStats', ecs, 'mS/cm');
+        updateStatsLabel('levelStats', levels, '%');
 
-        renderChart('tempChart', 'Temperature (°C)', labels, temps, '#F97316', 'rgba(249, 115, 22, 0.08)');
-        renderChart('phChart', 'pH Level', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.08)');
-        renderChart('ecChart', 'EC Level (mS/cm)', labels, ecs, '#10B981', 'rgba(16, 185, 129, 0.08)');
+        renderChart('tempChart', 'Temperature (°C)', labels, temps, '#F97316', 'rgba(249, 115, 22, 0.1)');
+        renderChart('phChart', 'pH Level', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.1)');
+        renderChart('levelChart', 'Water Level (%)', labels, levels, '#0D9488', 'rgba(13, 148, 136, 0.1)');
     } catch (err) {
         console.warn('fetchHistory:', err);
     }
@@ -923,13 +1033,14 @@ function exportCsv() {
     }
 
     const selectedDate = document.getElementById('datePicker').value || localDateKey(new Date());
-    const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'EC_mS_cm'];
+    const fallbackLevel = lastServerData ? (extractWaterLevel(lastServerData) ?? '') : '';
+    const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'Water_Level_Pct'];
     const rows = lastHistoryRecords.map(r => [
         currentMachine,
         new Date(r.recorded_at).toLocaleString('th-TH', { hour12: false }),
         r.temperature,
         r.ph,
-        r.ec
+        r.water_level ?? r.level ?? fallbackLevel
     ]);
 
     const csvContent = '\uFEFF' + [header, ...rows].map(e => e.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -960,8 +1071,8 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
                 data: dataPoints,
                 borderColor,
                 backgroundColor: bgColor,
-                borderWidth: 2,
-                pointRadius: dataPoints.length > 80 ? 0 : 2.5,
+                borderWidth: 2.5,
+                pointRadius: dataPoints.length > 80 ? 0 : 3,
                 pointHoverRadius: 5,
                 fill: true,
                 tension: 0.3
@@ -975,10 +1086,10 @@ function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) 
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: '#0F172A',
-                    titleFont: { family: 'Kanit', size: 11 },
-                    bodyFont: { family: 'Bai Jamjuree', size: 12 },
+                    titleFont: { family: 'Kanit', size: 12 },
+                    bodyFont: { family: 'Prompt', size: 12 },
                     padding: 10,
-                    cornerRadius: 6
+                    cornerRadius: 8
                 }
             },
             scales: {
