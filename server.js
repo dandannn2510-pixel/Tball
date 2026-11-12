@@ -9,6 +9,1582 @@ const sharedState = {
     activeMachineId: '00002'
 };
 
+// Embedded index.html so Vercel's serverless runtime always serves the page even without static file bundling
+const EMBEDDED_INDEX_HTML = `<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEAMEO — ระบบติดตามคุณภาพน้ำ (Temp &amp; pH) และสรุปรอบการทำงาน-ปริมาตรน้ำรายวัน</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23071324' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M32 12 C32 12 18 29 18 39 C18 46.7 24.3 53 32 53 C39.7 53 46 46.7 46 39 C46 29 32 12 32 12 Z' fill='url(%23g)'/%3E%3Cpath d='M22 39 Q27 34 32 39 T42 39' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Prompt"', '"Kanit"', 'sans-serif'],
+                        display: ['"Kanit"', '"Prompt"', 'sans-serif'],
+                        mono: ['"Kanit"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Prompt', 'Kanit', sans-serif;
+            background-color: #EEF3F8;
+            color: #0F172A;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-mono-num {
+            font-family: 'Kanit', sans-serif;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .graphic-title {
+            font-family: 'Kanit', sans-serif;
+            line-height: 1.35;
+        }
+
+        .graphic-num {
+            font-family: 'Kanit', sans-serif;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+        }
+
+        .led-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 9999px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .led-online {
+            background-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+        }
+
+        .led-standby {
+            background-color: #94A3B8;
+        }
+
+        .led-error {
+            background-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22);
+        }
+
+        .gauge-arc {
+            transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+        }
+
+        .bar-fill {
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col selection:bg-sky-700 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full">
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. หน้าเข้าสู่ระบบ (LOGIN PORTAL)                                       -->
+    <!-- ===================================================================== -->
+    <div id="authScreen" class="min-h-screen flex flex-col lg:flex-row bg-white">
+
+        <!-- ฝั่งซ้าย: ภาพพื้นหลังน้ำและรายละเอียดระบบ -->
+        <div
+            class="lg:w-[56%] xl:w-[58%] relative min-h-[420px] lg:min-h-screen flex flex-col justify-between p-8 sm:p-12 lg:p-16 text-white overflow-hidden bg-[#061A2E]">
+
+            <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=85"
+                alt="Water Surface" class="absolute inset-0 w-full h-full object-cover object-center" />
+
+            <div class="absolute inset-0 bg-gradient-to-b from-[#061A2E]/75 via-[#08243E]/55 to-[#04111F]/95"></div>
+
+            <!-- โลโก้ด้านบน -->
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-3.5">
+                    <div
+                        class="w-11 h-11 rounded-xl bg-sky-500/20 backdrop-blur-md border border-sky-300/30 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-sky-300" viewBox="0 0 32 32" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 13.5C8.5 10 12.2 10 16 13.5C19.8 17 23.5 17 27 13.5" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" />
+                            <path d="M5 19.5C8.5 16 12.2 16 16 19.5C19.8 23 23.5 23 27 19.5" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" opacity="0.7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-base font-bold tracking-wider uppercase text-white">SEAMEO</div>
+                        <div class="text-xs text-sky-200/80">Smart Water Quality &amp; Volume Telemetry</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ข้อความหลักและตารางสรุป -->
+            <div class="relative z-10 mt-auto pt-12 max-w-2xl">
+                <h1 class="font-display graphic-title text-3xl sm:text-4xl font-bold text-white">
+                    ระบบแสดงผลคุณภาพน้ำ<br>
+                    <span class="text-sky-300 font-semibold">จำนวนรอบการทำงาน และปริมาตรน้ำรายวัน</span>
+                </h1>
+
+                <p class="text-sm sm:text-base text-slate-200 leading-relaxed mt-4 max-w-xl">
+                    ติดตามค่าอุณหภูมิน้ำ (Temp) และความเป็นกรด-ด่าง (pH) แบบเรียลไทม์
+                    พร้อมแสดงจำนวนครั้งการทำงานต่อวัน ปริมาตรน้ำที่ได้ (จำนวนครั้ง × 100 ลิตร) และกราฟสรุปจำนวนรอบรายวัน
+                </p>
+
+                <div class="mt-10 pt-6 border-t border-white/20 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
+                        <div class="text-xs font-semibold text-orange-300">1. อุณหภูมิน้ำ</div>
+                        <div class="text-sm font-bold text-white mt-0.5">Temperature</div>
+                        <div class="text-xs text-white/70 mt-0.5">เกณฑ์ปกติ &lt; 35.0 °C</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
+                        <div class="text-xs font-semibold text-sky-300">2. ค่ากรด-ด่าง</div>
+                        <div class="text-sm font-bold text-white mt-0.5">pH Level</div>
+                        <div class="text-xs text-white/70 mt-0.5">เกณฑ์ปกติ 5.50 – 7.50</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
+                        <div class="text-xs font-semibold text-emerald-300">3. จำนวนรอบ/วัน</div>
+                        <div class="text-sm font-bold text-white mt-0.5">ดึงจากช่อง EC</div>
+                        <div class="text-xs text-white/70 mt-0.5">แสดงจำนวนครั้งต่อวัน</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
+                        <div class="text-xs font-semibold text-teal-300">4. ปริมาตรน้ำที่ได้</div>
+                        <div class="text-sm font-bold text-white mt-0.5">ครั้ง × 100 ลิตร</div>
+                        <div class="text-xs text-white/70 mt-0.5">พร้อมกราฟสรุปรายวัน</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: ฟอร์มเข้าสู่ระบบ -->
+        <div class="lg:w-[44%] xl:w-[42%] bg-white flex flex-col justify-between p-8 sm:p-12 lg:p-16">
+
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <span class="text-xs font-semibold tracking-wider text-slate-400">ระบบผู้ใช้งาน</span>
+                <div id="apiStatus" class="text-xs text-slate-500 flex items-center gap-2">
+                    <span class="led-dot led-standby"></span>
+                    <span>กำลังตรวจสอบฐานข้อมูล...</span>
+                </div>
+            </div>
+
+            <div class="my-10 lg:my-auto max-w-[360px] w-full mx-auto">
+                <div class="mb-7">
+                    <h2 id="authTitle" class="graphic-title text-2xl sm:text-3xl font-bold text-slate-900">
+                        เข้าสู่หน้าแสดงผลข้อมูล
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-1.5">
+                        กรอกชื่อผู้ใช้งานเพื่อเข้าดูข้อมูลคุณภาพน้ำ จำนวนรอบ และปริมาตรน้ำรายวัน
+                    </p>
+                </div>
+
+                <!-- แท็บสลับ เข้าสู่ระบบ / สมัครสมาชิก -->
+                <div class="flex border-b border-slate-200 mb-6">
+                    <button type="button" id="tabLogin" onclick="switchAuthTab('login')"
+                        class="pb-3 pr-6 text-sm font-bold border-b-2 border-sky-600 text-sky-700 transition-all">
+                        เข้าสู่ระบบ
+                    </button>
+                    <button type="button" id="tabRegister" onclick="switchAuthTab('register')"
+                        class="pb-3 px-6 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all">
+                        สมัครสมาชิกใหม่
+                    </button>
+                </div>
+
+                <div id="authMsgBox" class="hidden mb-5 p-3.5 rounded-lg text-xs border transition"></div>
+
+                <form onsubmit="handleAuth(event)" class="space-y-4">
+                    <div>
+                        <label id="authUsernameLabel" class="block text-sm font-semibold text-slate-700 mb-2">
+                            ชื่อผู้ใช้งาน (Username)
+                        </label>
+                        <input type="text" id="authUsername" required autocomplete="username"
+                            class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 text-slate-900 text-sm transition"
+                            placeholder="ระบุชื่อผู้ใช้งานของคุณ">
+                    </div>
+
+                    <button type="submit" id="authSubmitBtn"
+                        class="w-full py-3.5 px-5 rounded-lg bg-[#0B2545] hover:bg-sky-800 text-white text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                        <span id="authSubmitText">เข้าสู่หน้าจอแสดงผล</span>
+                    </button>
+                </form>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                    <button type="button" onclick="quickGuestLogin()"
+                        class="w-full py-3 px-4 rounded-lg border border-slate-200 hover:border-sky-300 hover:bg-sky-50 text-slate-700 text-xs font-semibold transition">
+                        เข้าใช้งานโหมดสาธิต (สำหรับคณะกรรมการ / ทดสอบระบบ)
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-xs text-slate-400 flex items-center justify-between pt-4 border-t border-slate-100">
+                <span>SEAMEO SYSTEM</span>
+                <span class="font-mono-num">SMART WATER MONITOR</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. หน้าแสดงผลหลัก (MAIN MONITORING DASHBOARD)                          -->
+    <!-- ===================================================================== -->
+    <div id="dashboardScreen" class="hidden flex-1 flex flex-col">
+
+        <!-- แถบหัวเว็บสีกรมท่าเข้ม -->
+        <header class="bg-[#0B2545] text-white border-b border-sky-900/60 sticky top-0 z-30 shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3.5">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-sky-300" viewBox="0 0 32 32" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 13C7.5 9.5 11.5 9.5 16 13C20.5 16.5 24.5 16.5 28 13" stroke="currentColor"
+                                stroke-width="2.6" stroke-linecap="round" />
+                            <path d="M4 20C7.5 16.5 11.5 16.5 16 20C20.5 23.5 24.5 23.5 28 20" stroke="currentColor"
+                                stroke-width="2.6" stroke-linecap="round" opacity="0.65" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-base tracking-wider text-white">SEAMEO</span>
+                            <span
+                                class="text-[11px] font-mono-num font-semibold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">MONITOR</span>
+                        </div>
+                        <h1 class="font-display text-xs sm:text-sm text-sky-100/80">
+                            ระบบแสดงผลคุณภาพน้ำ (Temp &amp; pH) จำนวนรอบการทำงาน และปริมาตรน้ำที่ได้
+                        </h1>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <div
+                        class="hidden lg:flex items-center gap-2 bg-[#071A33] border border-sky-800/70 px-3.5 py-1.5 rounded-lg text-xs font-mono-num text-sky-100">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span id="systemClock">--:--:--</span>
+                    </div>
+
+                    <div
+                        class="hidden sm:flex items-center gap-2 bg-[#071A33] border border-sky-800/70 py-1.5 px-3.5 rounded-lg text-xs">
+                        <span class="text-slate-300">ผู้ใช้งาน:</span>
+                        <strong id="displayUsername" class="text-sky-300 font-semibold">OPERATOR</strong>
+                    </div>
+
+                    <button onclick="openAddMachineModal()"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-lg transition shadow-sm">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>เพิ่มเครื่องใหม่</span>
+                    </button>
+
+                    <button onclick="logout()"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 border border-sky-800/80 rounded-lg transition">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">ออกจากระบบ</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- พื้นที่เนื้อหาหลัก (เฉพาะแสดงผลข้อมูลและกราฟ) -->
+        <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+
+            <!-- ============================================================= -->
+            <!-- ส่วนเชื่อมต่อหมายเลขเครื่อง & สรุปสถานะคุณภาพน้ำ                 -->
+            <!-- ============================================================= -->
+            <div
+                class="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+                            <i data-lucide="cpu" class="w-4 h-4"></i>
+                        </div>
+                        <label for="machineIdInput" class="text-sm font-bold text-slate-800">
+                            หมายเลขเครื่อง (Machine ID):
+                        </label>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="machineIdInput" placeholder="เช่น 00002"
+                            class="px-3.5 py-2 text-sm font-mono-num font-semibold border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 w-40 sm:w-44 bg-slate-50 text-slate-900">
+                        <button onclick="bindMachine()"
+                            class="px-4 py-2 text-xs font-semibold text-white bg-[#0B2545] hover:bg-sky-800 rounded-lg transition flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-3.5 h-3.5 text-sky-300"></i>
+                            <span>เชื่อมต่อ</span>
+                        </button>
+                    </div>
+                    <span id="connectionBadge" class="hidden px-3 py-1 text-xs rounded-lg font-semibold"></span>
+                </div>
+
+                <div
+                    class="flex flex-wrap items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 text-xs">
+                    <div id="overallWaterStatus"
+                        class="px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold">
+                        ภาพรวมคุณภาพน้ำ: รอการเชื่อมต่อเครื่อง
+                    </div>
+                    <div class="flex items-center gap-1.5 text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/70">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-sky-600"></i>
+                        <span id="lastUpdated">ยังไม่ได้เชื่อมต่อเครื่อง</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- ส่วนที่ 1: แสดงผลค่าเซนเซอร์ (Temp, pH) และจำนวนครั้ง + ปริมาตรน้ำต่อวัน -->
+            <!-- ============================================================= -->
+            <section class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-display font-bold text-sm">
+                            1
+                        </div>
+                        <div>
+                            <h2 class="font-display text-base sm:text-lg font-bold text-slate-900">
+                                ข้อมูลคุณภาพน้ำปัจจุบัน จำนวนรอบการทำงาน และปริมาตรน้ำที่ได้ต่อวัน
+                            </h2>
+                            <p class="text-xs text-slate-500">
+                                แสดงค่าอุณหภูมิ (Temp), ความเป็นกรด-ด่าง (pH), จำนวนครั้งต่อวัน (จากช่อง <code class="font-mono-num font-semibold text-emerald-700">ec</code>) และปริมาตรน้ำที่ได้ (จำนวนครั้ง × 100 ลิตร)
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-medium text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/70">
+                        ซิงค์ข้อมูลอัตโนมัติทุก 2 วินาที
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                    <!-- การ์ด 1: อุณหภูมิน้ำ (Temp) -->
+                    <div class="bg-white border-2 border-orange-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div class="h-2 bg-orange-500"></div>
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-10 h-10 rounded-lg bg-orange-50 border border-orange-200/70 text-orange-600 flex items-center justify-center shrink-0">
+                                        <i data-lucide="thermometer" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-display text-base font-bold text-slate-900">
+                                            อุณหภูมิน้ำ (Temp)
+                                        </h3>
+                                        <p class="text-xs text-slate-500">เกณฑ์ปกติ &lt; 35.0 °C</p>
+                                    </div>
+                                </div>
+                                <span id="tempStatus"
+                                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            </div>
+
+                            <div class="my-5 flex items-end justify-between gap-3">
+                                <div class="flex items-baseline gap-1.5">
+                                    <span id="tempCurrent"
+                                        class="graphic-num text-4xl sm:text-5xl font-bold text-slate-900">--</span>
+                                    <span class="text-base font-mono-num font-semibold text-orange-600">°C</span>
+                                </div>
+                                <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
+                                    <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#FFF7ED"
+                                        stroke-width="10" stroke-linecap="round" />
+                                    <path id="tempGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58"
+                                        fill="none" stroke="#F97316" stroke-width="10" stroke-linecap="round"
+                                        stroke-dasharray="144.5" stroke-dashoffset="144.5" />
+                                </svg>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="w-full h-2 bg-orange-100/70 rounded-full overflow-hidden">
+                                    <div id="tempBarFill" class="bar-fill h-full bg-orange-500 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between text-[11px] font-mono-num text-slate-500 mt-1.5">
+                                    <span>0 °C</span>
+                                    <span class="text-orange-600 font-medium">ปกติ &lt; 35.0 °C</span>
+                                    <span>50 °C</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- การ์ด 2: ความเป็นกรด-ด่าง (pH) -->
+                    <div class="bg-white border-2 border-sky-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div class="h-2 bg-sky-500"></div>
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-10 h-10 rounded-lg bg-sky-50 border border-sky-200/70 text-sky-600 flex items-center justify-center shrink-0">
+                                        <i data-lucide="flask-conical" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-display text-base font-bold text-slate-900">
+                                            ความเป็นกรด-ด่าง (pH)
+                                        </h3>
+                                        <p class="text-xs text-slate-500">เกณฑ์ปกติ 5.50 – 7.50 pH</p>
+                                    </div>
+                                </div>
+                                <span id="phStatus"
+                                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            </div>
+
+                            <div class="my-5 flex items-end justify-between gap-3">
+                                <div class="flex items-baseline gap-1.5">
+                                    <span id="phCurrent"
+                                        class="graphic-num text-4xl sm:text-5xl font-bold text-slate-900">--</span>
+                                    <span class="text-base font-mono-num font-semibold text-sky-600">pH</span>
+                                </div>
+                                <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
+                                    <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F0F9FF"
+                                        stroke-width="10" stroke-linecap="round" />
+                                    <path id="phGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58"
+                                        fill="none" stroke="#0284C7" stroke-width="10" stroke-linecap="round"
+                                        stroke-dasharray="144.5" stroke-dashoffset="144.5" />
+                                </svg>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="w-full h-2 bg-sky-100/70 rounded-full overflow-hidden">
+                                    <div id="phBarFill" class="bar-fill h-full bg-sky-500 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between text-[11px] font-mono-num text-slate-500 mt-1.5">
+                                    <span>0 (กรด)</span>
+                                    <span class="text-sky-600 font-medium">สมดุล 5.5 – 7.5</span>
+                                    <span>14 (ด่าง)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- การ์ด 3: จำนวนครั้งต่อวัน (จากช่อง EC) และปริมาตรน้ำที่ได้ (จำนวนครั้ง × 100 ลิตร) -->
+                    <div class="bg-white border-2 border-emerald-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div class="h-2 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center shrink-0">
+                                        <i data-lucide="droplets" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-display text-base font-bold text-slate-900">
+                                            จำนวนรอบ &amp; ปริมาตรน้ำต่อวัน
+                                        </h3>
+                                        <p class="text-xs text-slate-500">ดึงจำนวนครั้งจากช่อง <code class="font-mono-num font-semibold text-emerald-700">ec</code> • รอบละ 100 ลิตร</p>
+                                    </div>
+                                </div>
+                                <span id="cycleStatusBadge"
+                                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
+                            </div>
+
+                            <!-- แสดงคู่กันทั้ง จำนวนครั้ง และ ปริมาตรน้ำที่ได้ (ครั้ง × 100 ลิตร) -->
+                            <div class="my-4 grid grid-cols-2 gap-3">
+                                <div class="rounded-xl bg-emerald-50/70 border border-emerald-200/80 p-3 flex flex-col justify-between">
+                                    <span class="text-[11px] font-semibold text-emerald-800">จำนวนการทำงานวันนี้</span>
+                                    <div class="flex items-baseline gap-1.5 mt-1">
+                                        <span id="cycleCountCurrent"
+                                            class="graphic-num text-3xl sm:text-4xl font-bold text-slate-900">--</span>
+                                        <span class="text-xs font-mono-num font-bold text-emerald-700">ครั้ง</span>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl bg-teal-50/80 border border-teal-200/80 p-3 flex flex-col justify-between">
+                                    <span class="text-[11px] font-semibold text-teal-800">ปริมาตรน้ำที่ได้วันนี้</span>
+                                    <div class="flex items-baseline gap-1.5 mt-1">
+                                        <span id="volumeCurrent"
+                                            class="graphic-num text-3xl sm:text-4xl font-bold text-teal-700">--</span>
+                                        <span class="text-xs font-mono-num font-bold text-teal-700">ลิตร</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="w-full h-2 bg-emerald-100/70 rounded-full overflow-hidden">
+                                    <div id="cycleBarFill" class="bar-fill h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] font-mono-num text-slate-500 mt-1.5">
+                                    <span id="volumeFormulaText" class="text-emerald-700 font-medium">สูตรคำนวณ: จำนวนครั้ง × 100 ลิตร</span>
+                                    <span>อัปเดต: <strong id="lastCycleTime" class="text-slate-700">--:--:--</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- ส่วนที่ 2: กราฟวิเคราะห์แนวโน้มและกราฟสรุปจำนวนรอบรายวัน         -->
+            <!-- ============================================================= -->
+            <section class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-5 sm:p-6 space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-display font-bold text-sm">
+                            2
+                        </div>
+                        <div>
+                            <h2 class="font-display text-base sm:text-lg font-bold text-slate-900">
+                                กราฟวิเคราะห์คุณภาพน้ำ (Temp &amp; pH) และกราฟสรุปจำนวนรอบ-ปริมาตรน้ำรายวัน
+                            </h2>
+                            <p id="historyCount" class="text-xs text-slate-500">ข้อมูลที่บันทึกในวันที่เลือก: 0 รายการ</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+                            <label for="datePicker" class="text-xs font-semibold text-slate-600">วันที่ดูTemp/pH:</label>
+                            <input type="date" id="datePicker" onchange="fetchHistory()"
+                                class="text-xs font-mono-num text-slate-800 focus:outline-none bg-transparent">
+                        </div>
+
+                        <button type="button" onclick="fetchHistory()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+                            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                            <span>รีเฟรช</span>
+                        </button>
+
+                        <button type="button" onclick="exportCsv()"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-700 hover:bg-sky-800 rounded-lg transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>ส่งออก CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <!-- กราฟที่ 1: อุณหภูมิน้ำ -->
+                    <div class="border border-orange-200/80 rounded-xl p-4 bg-orange-50/20">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                                <h3 class="font-display text-sm font-bold text-slate-800">แนวโน้มอุณหภูมิน้ำ (°C)</h3>
+                            </div>
+                            <div id="tempStats" class="text-xs font-mono-num text-slate-600 bg-white px-2.5 py-1 rounded border border-slate-200">
+                                ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --
+                            </div>
+                        </div>
+                        <div class="h-56 relative bg-white rounded-lg p-2 border border-slate-100">
+                            <canvas id="tempChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- กราฟที่ 2: ความเป็นกรด-ด่าง (pH) -->
+                    <div class="border border-sky-200/80 rounded-xl p-4 bg-sky-50/20">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-sky-600"></span>
+                                <h3 class="font-display text-sm font-bold text-slate-800">แนวโน้มความเป็นกรด-ด่าง (pH)</h3>
+                            </div>
+                            <div id="phStats" class="text-xs font-mono-num text-slate-600 bg-white px-2.5 py-1 rounded border border-slate-200">
+                                ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --
+                            </div>
+                        </div>
+                        <div class="h-56 relative bg-white rounded-lg p-2 border border-slate-100">
+                            <canvas id="phChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- กราฟที่ 3 (ช่อง Water Level เดิม): เก็บเป็นวันๆ ว่าแต่ละวันได้กี่รอบ และแสดงปริมาตรน้ำ (รอบ × 100 ลิตร) -->
+                    <div class="lg:col-span-2 border border-teal-200/80 rounded-xl p-4 sm:p-5 bg-teal-50/20 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-teal-600"></span>
+                                <div>
+                                    <h3 class="font-display text-sm sm:text-base font-bold text-slate-800">
+                                        กราฟสรุปจำนวนรอบการทำงานและปริมาตรน้ำที่ได้แยกตามวัน (รายวัน)
+                                    </h3>
+                                    <p class="text-xs text-slate-500">
+                                        เก็บข้อมูลเป็นรายวันว่าแต่ละวันทำงานได้กี่รอบ (ครั้ง) และคิดเป็นปริมาตรน้ำกี่ลิตร (จำนวนครั้ง × 100 ลิตร)
+                                    </p>
+                                </div>
+                            </div>
+                            <div id="dailySummaryStats" class="text-xs font-mono-num text-teal-800 bg-white px-3 py-1.5 rounded-lg border border-teal-200 font-semibold">
+                                วันนี้: 0 ครั้ง (0 ลิตร)
+                            </div>
+                        </div>
+
+                        <div class="h-64 relative bg-white rounded-lg p-3 border border-slate-100">
+                            <canvas id="levelChart"></canvas>
+                        </div>
+
+                        <!-- ตารางสรุปจำนวนรอบและปริมาตรน้ำแยกตามวัน -->
+                        <div class="bg-white rounded-lg border border-slate-200/80 overflow-hidden">
+                            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-700">ตารางบันทึกจำนวนรอบและปริมาตรน้ำแยกตามวัน</span>
+                                <span class="text-[11px] font-mono-num text-slate-500">ปริมาตรน้ำ = จำนวนครั้ง × 100 ลิตร</span>
+                            </div>
+                            <div class="overflow-x-auto max-h-48">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="border-b border-slate-100 text-slate-500 bg-slate-50/50">
+                                            <th class="py-2 px-4 font-semibold">วันที่</th>
+                                            <th class="py-2 px-4 font-semibold text-right">จำนวนรอบที่ได้ (ครั้ง)</th>
+                                            <th class="py-2 px-4 font-semibold text-right">ปริมาตรน้ำที่ได้ (ลิตร)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dailyRoundsTableBody" class="divide-y divide-slate-100 font-mono-num">
+                                        <tr>
+                                            <td colspan="3" class="py-4 px-4 text-center text-slate-400">กำลังโหลดข้อมูลรายวัน...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div>SEAMEO — ระบบติดตามคุณภาพน้ำ (Temp &amp; pH) และสรุปจำนวนรอบ-ปริมาตรน้ำรายวัน</div>
+                <div class="font-mono-num text-[11px]">SEAMEO SMART WATER MONITOR</div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 3. หน้าต่างเพิ่มเครื่องตรวจวัดใหม่                                        -->
+    <!-- ===================================================================== -->
+    <div id="addMachineModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-xl border border-slate-200 shadow-2xl overflow-hidden">
+            <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+                <h3 class="font-display text-sm font-bold text-slate-900">
+                    เพิ่มเครื่องตรวจวัดใหม่ (Register Machine ID)
+                </h3>
+                <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-700">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form onsubmit="submitNewMachine(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">หมายเลขเครื่อง (Machine ID)</label>
+                    <input type="text" id="newMachineIdInput" required placeholder="เช่น 00002"
+                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 font-mono-num text-sm">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAddMachineModal()"
+                        class="py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="addMachineBtn"
+                        class="py-2 px-4 rounded-lg bg-[#0B2545] hover:bg-sky-800 text-white text-xs font-semibold transition">
+                        บันทึกและเชื่อมต่อ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            GAS_URL: "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec",
+            PROXY_URL: "/api",
+            DEFAULT_MACHINE_ID: "00002",
+            LITERS_PER_CYCLE: 100,
+            REQUEST_TIMEOUT_MS: 25000,
+            POLL_INTERVAL_MS: 2000,
+            HISTORY_REFRESH_MS: 10000,
+            THRESHOLDS: {
+                temp: { danger: 40, risky: 35 },
+                ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 }
+            }
+        };
+
+        let currentMachine = '';
+        let pollTimer = null;
+        let historyTimer = null;
+        let charts = {};
+        let isLoginMode = true;
+        let apiBase = null;
+        let machineNotFoundWarned = false;
+        let lastHistoryRecords = [];
+        let allHistoryRecords = [];
+        let currentEcCycles = null;
+
+        const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('seameo_monitor_sync') : null;
+
+        async function fetchWithTimeout(url, options = {}, timeoutMs = CONFIG.REQUEST_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        async function tryEndpoint(base) {
+            const res = await fetchWithTimeout(base + '?action=ping', { method: 'GET' }, 20000);
+            const text = await res.text();
+            JSON.parse(text);
+            return true;
+        }
+
+        async function resolveApiBase(force = false) {
+            if (apiBase && !force) return apiBase;
+            const candidates = [];
+            if (location.protocol.startsWith('http')) candidates.push(CONFIG.PROXY_URL);
+            candidates.push(CONFIG.GAS_URL);
+            for (const base of candidates) {
+                try {
+                    await tryEndpoint(base);
+                    apiBase = base;
+                    return apiBase;
+                } catch (err) {
+                    console.warn('[API] fallback:', base);
+                }
+            }
+            throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
+        }
+
+        async function callApi(action, params = {}, method = 'GET') {
+            const base = await resolveApiBase();
+            const query = new URLSearchParams({ action, _t: Date.now() });
+            const options = { method, cache: 'no-store' };
+            if (method === 'GET') {
+                Object.entries(params).forEach(([k, v]) => query.append(k, v));
+            } else {
+                options.body = new URLSearchParams(params);
+            }
+            const res = await fetchWithTimeout(base + '?' + query.toString(), options);
+            const text = await res.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                apiBase = null;
+                throw new Error('ข้อมูลตอบกลับไม่ถูกต้อง');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const datePicker = document.getElementById('datePicker');
+            if (datePicker) datePicker.value = localDateKey(new Date());
+
+            const machineInput = document.getElementById('machineIdInput');
+            if (machineInput) {
+                machineInput.addEventListener('keydown', e => { if (e.key === 'Enter') bindMachine(); });
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && currentMachine) {
+                    fetchCurrentData();
+                    fetchHistory();
+                }
+            });
+
+            if (syncChannel) {
+                syncChannel.onmessage = (ev) => {
+                    const msg = ev.data;
+                    if (!msg) return;
+                    if (msg.type === 'MACHINE_CHANGED' && msg.machineId && msg.machineId !== currentMachine) {
+                        document.getElementById('machineIdInput').value = msg.machineId;
+                        bindMachine(msg.machineId, true);
+                    }
+                };
+            }
+
+            startSystemClock();
+            checkLoginStatus();
+            checkApiStatus();
+            if (window.lucide) lucide.createIcons();
+        });
+
+        function startSystemClock() {
+            const updateClock = () => {
+                const el = document.getElementById('systemClock');
+                if (!el) return;
+                const now = new Date();
+                el.innerText = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) +
+                    ' | ' + now.toLocaleTimeString('th-TH', { hour12: false });
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        async function checkApiStatus() {
+            const el = document.getElementById('apiStatus');
+            if (!el) return;
+            el.className = 'text-xs text-slate-400 flex items-center gap-2';
+            el.innerHTML = '<span class="led-dot led-standby"></span><span>กำลังตรวจสอบฐานข้อมูล...</span>';
+            try {
+                await resolveApiBase(true);
+                el.className = 'text-xs text-emerald-700 font-semibold flex items-center gap-2';
+                el.innerHTML = '<span class="led-dot led-online"></span><span>เชื่อมต่อฐานข้อมูลพร้อมใช้งาน</span>';
+            } catch (err) {
+                el.className = 'text-xs text-rose-600 flex items-center gap-2';
+                el.innerHTML = '<span class="led-dot led-error"></span><span>' + escapeHtml(err.message) + '</span> <button type="button" onclick="checkApiStatus()" class="underline font-semibold ml-1">ลองใหม่</button>';
+            }
+        }
+
+        function localDateKey(dateInput) {
+            const d = new Date(dateInput);
+            if (isNaN(d.getTime())) return '';
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function formatThaiDateLabel(dateKey) {
+            if (!dateKey) return '';
+            const parts = dateKey.split('-');
+            if (parts.length !== 3) return dateKey;
+            const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            if (isNaN(d.getTime())) return dateKey;
+            return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function formatNumber(value) {
+            if (value === '' || value === null || value === undefined || isNaN(parseFloat(value))) return '--';
+            return parseFloat(value).toFixed(2);
+        }
+
+        function parseCycleCount(rawVal) {
+            if (rawVal === '' || rawVal === null || rawVal === undefined) return null;
+            const num = parseFloat(rawVal);
+            if (isNaN(num) || num < 0) return null;
+            return Number.isInteger(num) ? num : Number(num.toFixed(2));
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const styles = {
+                success: 'bg-slate-900 border-l-4 border-emerald-500 text-white',
+                error: 'bg-slate-900 border-l-4 border-rose-500 text-white',
+                info: 'bg-slate-900 border-l-4 border-sky-500 text-white'
+            };
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto px-4 py-3 rounded-lg shadow-lg text-xs font-medium transition-all duration-300 translate-y-2 opacity-0 ' + (styles[type] || styles.info);
+            toast.innerText = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function showAuthMessage(html, type = 'error') {
+            const box = document.getElementById('authMsgBox');
+            if (!box) return;
+            const styles = {
+                error: 'bg-rose-50 text-rose-800 border-rose-200',
+                success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                info: 'bg-sky-50 text-sky-800 border-sky-200'
+            };
+            box.className = 'mb-5 p-3.5 rounded-lg text-xs border text-center ' + (styles[type] || styles.error);
+            box.innerHTML = html;
+        }
+
+        function hideAuthMessage() {
+            const box = document.getElementById('authMsgBox');
+            if (box) { box.className = 'hidden'; box.innerHTML = ''; }
+        }
+
+        function getDailyRoundsStorageKey(machineId) {
+            return 'seameo_daily_rounds_map_' + machineId;
+        }
+
+        function getStoredDailyRoundsMap(machineId) {
+            if (!machineId) return {};
+            try {
+                const raw = localStorage.getItem(getDailyRoundsStorageKey(machineId));
+                return raw ? JSON.parse(raw) : {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function saveDailyRoundForDate(machineId, dateKey, cycles) {
+            if (!machineId || !dateKey || cycles === null || isNaN(cycles)) return;
+            const map = getStoredDailyRoundsMap(machineId);
+            map[dateKey] = cycles;
+            try {
+                localStorage.setItem(getDailyRoundsStorageKey(machineId), JSON.stringify(map));
+            } catch (_) {}
+        }
+
+        function updateCycleAndVolumeCard(rawEcValue) {
+            const countEl = document.getElementById('cycleCountCurrent');
+            const volEl = document.getElementById('volumeCurrent');
+            const badgeEl = document.getElementById('cycleStatusBadge');
+            const formulaEl = document.getElementById('volumeFormulaText');
+            const barEl = document.getElementById('cycleBarFill');
+            const timeEl = document.getElementById('lastCycleTime');
+
+            const cycles = parseCycleCount(rawEcValue);
+            currentEcCycles = cycles;
+
+            if (cycles === null) {
+                if (countEl) countEl.innerText = '--';
+                if (volEl) volEl.innerText = '--';
+                if (badgeEl) {
+                    badgeEl.innerText = 'รอข้อมูล';
+                    badgeEl.className = 'px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0';
+                }
+                if (formulaEl) formulaEl.innerText = 'สูตรคำนวณ: จำนวนครั้ง × 100 ลิตร';
+                if (barEl) barEl.style.width = '0%';
+                return;
+            }
+
+            const volumeLiters = cycles * CONFIG.LITERS_PER_CYCLE;
+            const todayKey = localDateKey(new Date());
+            saveDailyRoundForDate(currentMachine, todayKey, cycles);
+
+            if (countEl) countEl.innerText = cycles.toLocaleString('th-TH');
+            if (volEl) volEl.innerText = volumeLiters.toLocaleString('th-TH');
+            if (timeEl) timeEl.innerText = new Date().toLocaleTimeString('th-TH', { hour12: false });
+            if (formulaEl) {
+                formulaEl.innerText = cycles.toLocaleString('th-TH') + ' ครั้ง × 100 = ' + volumeLiters.toLocaleString('th-TH') + ' ลิตร';
+            }
+            if (badgeEl) {
+                badgeEl.innerText = cycles > 0 ? ('ทำงานแล้ว ' + cycles.toLocaleString('th-TH') + ' ครั้ง') : '0 ครั้ง (พร้อมทำงาน)';
+                badgeEl.className = cycles > 0
+                    ? 'px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0'
+                    : 'px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 shrink-0';
+            }
+
+            const maxScale = Math.max(20, Math.ceil((cycles || 1) / 20) * 20);
+            const pct = Math.max(0, Math.min(100, (cycles / maxScale) * 100));
+            if (barEl) barEl.style.width = pct.toFixed(1) + '%';
+
+            renderDailyRoundsChartAndTable();
+        }
+
+        function buildDailyRoundsSeries() {
+            const byDate = {};
+
+            const storedMap = getStoredDailyRoundsMap(currentMachine);
+            Object.entries(storedMap).forEach(([dKey, val]) => {
+                const c = parseCycleCount(val);
+                if (c !== null) byDate[dKey] = c;
+            });
+
+            if (Array.isArray(allHistoryRecords)) {
+                const rowsByDate = {};
+                allHistoryRecords.forEach(r => {
+                    if (!r.recorded_at) return;
+                    const dKey = localDateKey(r.recorded_at);
+                    if (!dKey) return;
+                    if (!rowsByDate[dKey]) rowsByDate[dKey] = [];
+                    rowsByDate[dKey].push(r);
+                });
+
+                Object.entries(rowsByDate).forEach(([dKey, rows]) => {
+                    const ecNums = rows
+                        .map(r => parseCycleCount(r.ec ?? r.water_level ?? r.level))
+                        .filter(v => v !== null && v > 0);
+                    let dayRounds = 0;
+                    if (ecNums.length > 0) {
+                        dayRounds = Math.max(...ecNums);
+                    } else {
+                        dayRounds = rows.length;
+                    }
+                    byDate[dKey] = Math.max(byDate[dKey] || 0, dayRounds);
+                });
+            }
+
+            const todayKey = localDateKey(new Date());
+            if (currentEcCycles !== null) {
+                byDate[todayKey] = currentEcCycles;
+            } else if (byDate[todayKey] === undefined) {
+                byDate[todayKey] = 0;
+            }
+
+            const sortedDates = Object.keys(byDate).sort();
+            return sortedDates.map(dKey => {
+                const rounds = byDate[dKey] || 0;
+                return {
+                    dateKey: dKey,
+                    label: formatThaiDateLabel(dKey) + (dKey === todayKey ? ' (วันนี้)' : ''),
+                    rounds,
+                    liters: rounds * CONFIG.LITERS_PER_CYCLE
+                };
+            });
+        }
+
+        function renderDailyRoundsChartAndTable() {
+            const series = buildDailyRoundsSeries();
+            const todayKey = localDateKey(new Date());
+            const todayEntry = series.find(s => s.dateKey === todayKey) || { rounds: 0, liters: 0 };
+
+            const statsEl = document.getElementById('dailySummaryStats');
+            if (statsEl) {
+                const totalAllDaysRounds = series.reduce((acc, s) => acc + s.rounds, 0);
+                const totalAllDaysLiters = totalAllDaysRounds * CONFIG.LITERS_PER_CYCLE;
+                statsEl.innerText = 'วันนี้: ' + todayEntry.rounds.toLocaleString('th-TH') + ' ครั้ง (' + todayEntry.liters.toLocaleString('th-TH') + ' ลิตร) | สะสมทุกวัน: ' + totalAllDaysRounds.toLocaleString('th-TH') + ' ครั้ง (' + totalAllDaysLiters.toLocaleString('th-TH') + ' ลิตร)';
+            }
+
+            const tbody = document.getElementById('dailyRoundsTableBody');
+            if (tbody) {
+                if (series.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="py-4 px-4 text-center text-slate-400">ยังไม่มีข้อมูลรายวัน</td></tr>';
+                } else {
+                    tbody.innerHTML = [...series].reverse().map(item => {
+                        const isToday = item.dateKey === todayKey;
+                        return '<tr class="' + (isToday ? 'bg-teal-50/60 font-semibold text-slate-900' : 'text-slate-700') + '">' +
+                            '<td class="py-2.5 px-4">' + escapeHtml(item.label) + '</td>' +
+                            '<td class="py-2.5 px-4 text-right text-emerald-700 font-bold">' + item.rounds.toLocaleString('th-TH') + ' ครั้ง</td>' +
+                            '<td class="py-2.5 px-4 text-right text-teal-700 font-bold">' + item.liters.toLocaleString('th-TH') + ' ลิตร</td>' +
+                            '</tr>';
+                    }).join('');
+                }
+            }
+
+            const canvas = document.getElementById('levelChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            if (charts['levelChart']) charts['levelChart'].destroy();
+
+            charts['levelChart'] = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: series.map(s => s.label),
+                    datasets: [
+                        {
+                            label: 'จำนวนรอบต่อวัน (ครั้ง)',
+                            data: series.map(s => s.rounds),
+                            backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                            borderColor: '#0D9488',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            maxBarThickness: 56
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Kanit', size: 12 },
+                            bodyFont: { family: 'Prompt', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (ctx) {
+                                    const rounds = Number(ctx.raw) || 0;
+                                    const liters = rounds * CONFIG.LITERS_PER_CYCLE;
+                                    return [
+                                        'จำนวนการทำงาน: ' + rounds.toLocaleString('th-TH') + ' ครั้ง (รอบ)',
+                                        'ปริมาตรน้ำที่ได้: ' + liters.toLocaleString('th-TH') + ' ลิตร'
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#E2E8F0' },
+                            ticks: {
+                                font: { family: 'Kanit', size: 11 },
+                                color: '#64748B',
+                                precision: 0,
+                                callback: function (val) {
+                                    return val + ' ครั้ง (' + (val * CONFIG.LITERS_PER_CYCLE) + ' L)';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Kanit', size: 11 }, color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function autoConnectSharedMachine() {
+            let targetMachine = localStorage.getItem('currentMachine') || '';
+            try {
+                const syncInfo = await callApi('get_sync_state');
+                if (syncInfo && syncInfo.active_machine_id && !targetMachine) {
+                    targetMachine = syncInfo.active_machine_id;
+                }
+            } catch (_) {}
+            if (!targetMachine) targetMachine = CONFIG.DEFAULT_MACHINE_ID || '00002';
+            const input = document.getElementById('machineIdInput');
+            if (input) input.value = targetMachine;
+            if (targetMachine !== currentMachine) bindMachine(targetMachine, true);
+        }
+
+        function checkLoginStatus() {
+            const userId = localStorage.getItem('userID');
+            const username = localStorage.getItem('username');
+            const authScreen = document.getElementById('authScreen');
+            const dashboardScreen = document.getElementById('dashboardScreen');
+            if (userId && username) {
+                authScreen.classList.add('hidden');
+                dashboardScreen.classList.remove('hidden');
+                document.getElementById('displayUsername').innerText = username;
+                autoConnectSharedMachine();
+            } else {
+                authScreen.classList.remove('hidden');
+                dashboardScreen.classList.add('hidden');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function switchAuthTab(mode) {
+            isLoginMode = (mode === 'login');
+            const active = 'pb-3 pr-6 text-sm font-bold border-b-2 border-sky-600 text-sky-700 transition-all';
+            const inactive = 'pb-3 px-6 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all';
+            document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่หน้าแสดงผลข้อมูล' : 'สมัครสมาชิกผู้ใช้งานใหม่';
+            document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่หน้าจอแสดงผล' : 'ยืนยันการสมัครสมาชิก';
+            document.getElementById('authUsernameLabel').innerText = isLoginMode ? 'ชื่อผู้ใช้งาน (Username)' : 'ตั้งชื่อผู้ใช้งานใหม่ (New Username)';
+            document.getElementById('tabLogin').className = isLoginMode ? active : inactive;
+            document.getElementById('tabRegister').className = isLoginMode ? inactive : active;
+            hideAuthMessage();
+        }
+
+        function setAuthLoading(loading, text) {
+            const btn = document.getElementById('authSubmitBtn');
+            const label = document.getElementById('authSubmitText');
+            btn.disabled = loading;
+            btn.classList.toggle('opacity-70', loading);
+            btn.classList.toggle('cursor-wait', loading);
+            label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่หน้าจอแสดงผล' : 'ยืนยันการสมัครสมาชิก');
+        }
+
+        function completeLogin(userId, username) {
+            localStorage.setItem('userID', String(userId));
+            localStorage.setItem('username', String(username));
+            document.getElementById('authUsername').value = '';
+            hideAuthMessage();
+            showToast('เข้าสู่ระบบสำเร็จ — สวัสดีคุณ ' + username, 'success');
+            checkLoginStatus();
+        }
+
+        async function handleAuth(event) {
+            if (event) event.preventDefault();
+            const username = document.getElementById('authUsername').value.trim();
+            if (!username) {
+                showAuthMessage('กรุณากรอกชื่อผู้ใช้งาน');
+                return;
+            }
+            hideAuthMessage();
+            try {
+                if (isLoginMode) {
+                    setAuthLoading(true, 'กำลังตรวจสอบสิทธิ์...');
+                    const data = await callApi('login_user', { username }, 'POST');
+                    if (data.status === 'success') {
+                        completeLogin(data.user_id, data.username);
+                    } else {
+                        const msg = escapeHtml(data.message || 'ไม่พบชื่อผู้ใช้งานนี้');
+                        const safeName = escapeHtml(username).replace(/'/g, '&#39;');
+                        showAuthMessage('<div>' + msg + '</div><button type="button" onclick="registerAndLogin(\'' + safeName + '\')" class="mt-2 text-sky-700 hover:text-sky-900 font-semibold underline text-xs">คลิกเพื่อสมัครสมาชิกชื่อ "' + safeName + '" และเข้าสู่ระบบทันที</button>');
+                    }
+                } else {
+                    await registerAndLogin(username);
+                }
+            } catch (err) {
+                showAuthMessage('เชื่อมต่อไม่สำเร็จ: ' + escapeHtml(err.name === 'AbortError' ? 'หมดเวลาเชื่อมต่อ กรุณาลองใหม่' : err.message));
+            } finally {
+                setAuthLoading(false);
+            }
+        }
+
+        async function registerAndLogin(username) {
+            hideAuthMessage();
+            setAuthLoading(true, 'กำลังบันทึกข้อมูล...');
+            try {
+                const reg = await callApi('register_user', { username }, 'POST');
+                if (reg.status !== 'success' && !(reg.message || '').includes('มีคนใช้แล้ว')) {
+                    showAuthMessage(escapeHtml(reg.message || 'ไม่สามารถสมัครสมาชิกได้'));
+                    return;
+                }
+                setAuthLoading(true, 'กำลังเข้าสู่ระบบ...');
+                const login = await callApi('login_user', { username }, 'POST');
+                if (login.status === 'success') {
+                    completeLogin(login.user_id, login.username);
+                } else {
+                    isLoginMode = true;
+                    switchAuthTab('login');
+                    showAuthMessage('สมัครสมาชิกสำเร็จ กรุณากดเข้าสู่ระบบ', 'success');
+                }
+            } catch (err) {
+                showAuthMessage('เชื่อมต่อไม่สำเร็จ: ' + escapeHtml(err.message));
+            } finally {
+                setAuthLoading(false);
+            }
+        }
+
+        function quickGuestLogin() {
+            completeLogin('DEMO', 'DEMO_EVALUATOR');
+        }
+
+        function logout() {
+            stopPolling();
+            currentMachine = '';
+            localStorage.removeItem('userID');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentMachine');
+            document.getElementById('machineIdInput').value = '';
+            const badge = document.getElementById('connectionBadge');
+            if (badge) badge.className = 'hidden';
+            resetDashboard();
+            showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
+            checkLoginStatus();
+        }
+
+        function stopPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+            if (historyTimer) clearInterval(historyTimer);
+            pollTimer = null;
+            historyTimer = null;
+        }
+
+        function resetDashboard() {
+            ['tempCurrent', 'phCurrent', 'cycleCountCurrent', 'volumeCurrent'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = '--';
+            });
+            ['tempStatus', 'phStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
+            ['tempGaugeArc', 'phGaugeArc'].forEach(id => {
+                const arc = document.getElementById(id);
+                if (arc) arc.style.strokeDashoffset = '144.5';
+            });
+            ['tempBarFill', 'phBarFill', 'cycleBarFill'].forEach(id => {
+                const bar = document.getElementById(id);
+                if (bar) bar.style.width = '0%';
+            });
+            Object.values(charts).forEach(c => c.destroy());
+            charts = {};
+            lastHistoryRecords = [];
+            allHistoryRecords = [];
+            currentEcCycles = null;
+            const lu = document.getElementById('lastUpdated');
+            if (lu) lu.innerText = 'ยังไม่ได้เชื่อมต่อเครื่อง';
+        }
+
+        function bindMachine(targetId, silent = false) {
+            const input = document.getElementById('machineIdInput');
+            const machineId = String(targetId || input.value || '').trim();
+            if (!machineId) {
+                showToast('กรุณาระบุหมายเลขเครื่อง (Machine ID)', 'error');
+                return;
+            }
+            stopPolling();
+            resetDashboard();
+            currentMachine = machineId;
+            machineNotFoundWarned = false;
+            localStorage.setItem('currentMachine', currentMachine);
+            if (syncChannel && !silent) {
+                try { syncChannel.postMessage({ type: 'MACHINE_CHANGED', machineId: currentMachine }); } catch (_) {}
+            }
+            const badge = document.getElementById('connectionBadge');
+            badge.innerText = 'กำลังเชื่อมต่อ ' + currentMachine + '...';
+            badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-amber-50 text-amber-700 border border-amber-200 inline-block';
+            if (!silent) showToast('กำลังดึงข้อมูลจาก ' + currentMachine + '...', 'info');
+            fetchCurrentData();
+            fetchHistory();
+            pollTimer = setInterval(fetchCurrentData, CONFIG.POLL_INTERVAL_MS);
+            historyTimer = setInterval(fetchHistory, CONFIG.HISTORY_REFRESH_MS);
+        }
+
+        function openAddMachineModal() {
+            const modal = document.getElementById('addMachineModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('newMachineIdInput').focus(), 50);
+        }
+
+        function closeAddMachineModal() {
+            const modal = document.getElementById('addMachineModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('newMachineIdInput').value = '';
+        }
+
+        async function submitNewMachine(event) {
+            if (event) event.preventDefault();
+            const newId = document.getElementById('newMachineIdInput').value.trim();
+            if (!newId) return;
+            const btn = document.getElementById('addMachineBtn');
+            const originalText = btn.innerText;
+            btn.innerText = 'กำลังบันทึก...';
+            btn.disabled = true;
+            try {
+                const data = await callApi('add_machine', {
+                    machine_id: newId,
+                    user_id: localStorage.getItem('userID') || '1'
+                }, 'POST');
+                if (data.status === 'success') {
+                    showToast('เพิ่มเครื่อง "' + newId + '" สำเร็จ', 'success');
+                } else {
+                    showToast(data.message || 'ไม่สามารถเพิ่มเครื่องได้', 'error');
+                    if (!(data.message || '').includes('ลงทะเบียนไปแล้ว')) return;
+                }
+                closeAddMachineModal();
+                document.getElementById('machineIdInput').value = newId;
+                bindMachine(newId, false);
+            } catch (err) {
+                showToast('เชื่อมต่อไม่สำเร็จ: ' + err.message, 'error');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function evaluateStatus(type, value) {
+            const none = { text: 'รอข้อมูล', badgeClass: 'bg-slate-100 text-slate-500' };
+            if (value === null || value === undefined || value === '') return none;
+            const danger = { text: 'เกินเกณฑ์วิกฤต', badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200 font-semibold' };
+            const risky = { text: 'เฝ้าระวัง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
+            const safe = { text: 'ปกติ', badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold' };
+            const num = parseFloat(value);
+            if (isNaN(num)) return none;
+            const th = CONFIG.THRESHOLDS;
+            if (type === 'temp') return num > th.temp.danger ? danger : num >= th.temp.risky ? risky : safe;
+            if (type === 'ph') {
+                if (num < th.ph.dangerMin || num > th.ph.dangerMax) return danger;
+                if (num < th.ph.riskyMin || num > th.ph.riskyMax) return risky;
+                return safe;
+            }
+            return none;
+        }
+
+        function updateBadge(id, stat) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerText = stat.text;
+            el.className = 'px-2.5 py-1 rounded-md text-xs transition-colors duration-200 shrink-0 ' + stat.badgeClass;
+        }
+
+        function updateGaugeAndBar(arcId, barId, value, maxVal) {
+            const arc = document.getElementById(arcId);
+            const bar = document.getElementById(barId);
+            const num = parseFloat(value);
+            if (isNaN(num)) {
+                if (arc) arc.style.strokeDashoffset = '144.5';
+                if (bar) bar.style.width = '0%';
+                return;
+            }
+            const pct = Math.max(0, Math.min(100, (num / maxVal) * 100));
+            const offset = 144.5 - (pct / 100) * 144.5;
+            if (arc) arc.style.strokeDashoffset = offset.toFixed(1);
+            if (bar) bar.style.width = pct.toFixed(1) + '%';
+        }
+
+        function updateOverallWaterStatus(data) {
+            const el = document.getElementById('overallWaterStatus');
+            if (!el) return;
+            const tempVal = data.current_temp ?? data.temp;
+            const phVal = data.current_ph ?? data.ph;
+            const tempStat = evaluateStatus('temp', tempVal).text;
+            const phStat = evaluateStatus('ph', phVal).text;
+            const statuses = [tempStat, phStat];
+            if (statuses.includes('เกินเกณฑ์วิกฤต')) {
+                el.innerText = 'ภาพรวมคุณภาพน้ำ: เกินเกณฑ์วิกฤต';
+                el.className = 'px-3.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-xs';
+            } else if (statuses.includes('เฝ้าระวัง')) {
+                el.innerText = 'ภาพรวมคุณภาพน้ำ: มีค่าอยู่ในเกณฑ์เฝ้าระวัง';
+                el.className = 'px-3.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-semibold text-xs';
+            } else if (statuses.every(s => s === 'ปกติ')) {
+                el.innerText = 'ภาพรวมคุณภาพน้ำ: อยู่ในเกณฑ์ปกติ (Temp & pH)';
+                el.className = 'px-3.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-xs';
+            } else {
+                el.innerText = 'ภาพรวมคุณภาพน้ำ: กำลังรับข้อมูลจากเซนเซอร์';
+                el.className = 'px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold text-xs';
+            }
+        }
+
+        async function fetchCurrentData() {
+            if (!currentMachine) return;
+            const machineAtRequest = currentMachine;
+            try {
+                const data = await callApi('get_current', { machine_id: machineAtRequest });
+                if (machineAtRequest !== currentMachine) return;
+                const badge = document.getElementById('connectionBadge');
+                if (!data || Object.keys(data).length === 0 || data.status === 'error') {
+                    badge.innerText = 'ไม่พบเครื่อง: ' + currentMachine;
+                    badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-700 border border-rose-200 inline-block';
+                    if (!machineNotFoundWarned) {
+                        machineNotFoundWarned = true;
+                        showToast('ไม่พบเครื่อง "' + currentMachine + '" กด "+ เพิ่มเครื่องใหม่" เพื่อลงทะเบียน', 'error');
+                    }
+                    return;
+                }
+                badge.innerText = 'ออนไลน์: ' + currentMachine;
+                badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block';
+                const tempVal = data.current_temp ?? data.temp;
+                const phVal = data.current_ph ?? data.ph;
+                const ecCycleVal = data.current_ec ?? data.ec ?? 0;
+
+                document.getElementById('tempCurrent').innerText = formatNumber(tempVal);
+                document.getElementById('phCurrent').innerText = formatNumber(phVal);
+                updateBadge('tempStatus', evaluateStatus('temp', tempVal));
+                updateBadge('phStatus', evaluateStatus('ph', phVal));
+                updateGaugeAndBar('tempGaugeArc', 'tempBarFill', tempVal, 50);
+                updateGaugeAndBar('phGaugeArc', 'phBarFill', phVal, 14);
+                updateOverallWaterStatus(data);
+
+                updateCycleAndVolumeCard(ecCycleVal);
+
+                const lu = document.getElementById('lastUpdated');
+                if (lu) lu.innerText = 'ซิงค์ล่าสุด ' + new Date().toLocaleTimeString('th-TH', { hour12: false });
+            } catch (err) {
+                const lu = document.getElementById('lastUpdated');
+                if (lu) lu.innerText = 'กำลังซิงค์ข้อมูลใหม่...';
+            }
+        }
+
+        function updateStatsLabel(elementId, values, unit) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const nums = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
+            if (nums.length === 0) {
+                el.innerText = 'ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --';
+                return;
+            }
+            const min = Math.min(...nums).toFixed(2);
+            const max = Math.max(...nums).toFixed(2);
+            const avg = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
+            el.innerText = 'ต่ำสุด: ' + min + ' ' + unit + ' | เฉลี่ย: ' + avg + ' ' + unit + ' | สูงสุด: ' + max + ' ' + unit;
+        }
+
+        async function fetchHistory() {
+            if (!currentMachine) return;
+            const machineAtRequest = currentMachine;
+            try {
+                const data = await callApi('get_history', { machine_id: machineAtRequest });
+                if (machineAtRequest !== currentMachine || !Array.isArray(data)) return;
+
+                allHistoryRecords = data;
+                renderDailyRoundsChartAndTable();
+
+                const todayKey = localDateKey(new Date());
+                const selectedDate = document.getElementById('datePicker').value || todayKey;
+                const filtered = data.filter(d => d.recorded_at && localDateKey(d.recorded_at) === selectedDate)
+                    .sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
+                lastHistoryRecords = filtered;
+
+                const countEl = document.getElementById('historyCount');
+                if (countEl) countEl.innerText = 'ข้อมูลที่บันทึกในวันที่เลือก: ' + filtered.length + ' รายการ';
+
+                const labels = filtered.map(d => new Date(d.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }));
+                const temps = filtered.map(d => d.temperature);
+                const phs = filtered.map(d => d.ph);
+                updateStatsLabel('tempStats', temps, '°C');
+                updateStatsLabel('phStats', phs, 'pH');
+                renderChart('tempChart', 'Temperature (°C)', labels, temps, '#F97316', 'rgba(249, 115, 22, 0.1)');
+                renderChart('phChart', 'pH Level', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.1)');
+            } catch (err) {
+                console.warn('fetchHistory:', err);
+            }
+        }
+
+        function exportCsv() {
+            if (!currentMachine) {
+                showToast('กรุณาเชื่อมต่อเครื่องก่อนส่งออกข้อมูล', 'error');
+                return;
+            }
+            const dailySeries = buildDailyRoundsSeries();
+            if ((!lastHistoryRecords || lastHistoryRecords.length === 0) && dailySeries.length === 0) {
+                showToast('ไม่มีข้อมูลสำหรับส่งออก', 'error');
+                return;
+            }
+            const selectedDate = document.getElementById('datePicker').value || localDateKey(new Date());
+            const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'Cycles_Count_EC', 'Water_Volume_Liters'];
+            const rows = (lastHistoryRecords.length > 0 ? lastHistoryRecords : [{
+                recorded_at: new Date().toISOString(),
+                temperature: document.getElementById('tempCurrent').innerText,
+                ph: document.getElementById('phCurrent').innerText,
+                ec: currentEcCycles ?? 0
+            }]).map(r => {
+                const c = parseCycleCount(r.ec ?? currentEcCycles ?? 0) || 0;
+                return [
+                    currentMachine,
+                    new Date(r.recorded_at).toLocaleString('th-TH', { hour12: false }),
+                    r.temperature,
+                    r.ph,
+                    c,
+                    c * CONFIG.LITERS_PER_CYCLE
+                ];
+            });
+            const csvContent = '\uFEFF' + [header, ...rows].map(e => e.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'seameo_' + currentMachine + '_' + selectedDate + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('ส่งออกไฟล์ CSV สำเร็จ', 'success');
+        }
+
+        function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || typeof Chart === 'undefined') return;
+            if (charts[canvasId]) charts[canvasId].destroy();
+            charts[canvasId] = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label,
+                        data: dataPoints,
+                        borderColor,
+                        backgroundColor: bgColor,
+                        borderWidth: 2.5,
+                        pointRadius: dataPoints.length > 80 ? 0 : 3,
+                        pointHoverRadius: 5,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Kanit', size: 12 },
+                            bodyFont: { family: 'Prompt', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#E2E8F0' },
+                            ticks: { font: { family: 'Kanit', size: 11 }, color: '#64748B' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8', maxTicksLimit: 10 }
+                        }
+                    }
+                }
+            });
+        }
+
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+
+</html>`;
+
 const MIME_TYPES = {
     '.html': 'text/html; charset=UTF-8',
     '.js': 'text/javascript; charset=UTF-8',
@@ -143,16 +1719,8 @@ const server = http.createServer(async (req, res) => {
 
     fs.readFile(filePath, (err, content) => {
         if (err) {
-            const indexFallback = path.join(__dirname, 'index.html');
-            fs.readFile(indexFallback, (err2, indexContent) => {
-                if (err2) {
-                    res.writeHead(404, { 'Content-Type': 'text/plain; charset=UTF-8' });
-                    res.end('404 Not Found');
-                    return;
-                }
-                res.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8', 'Cache-Control': 'no-cache' });
-                res.end(indexContent);
-            });
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8', 'Cache-Control': 'no-cache' });
+            res.end(EMBEDDED_INDEX_HTML);
             return;
         }
         const ext = path.extname(filePath).toLowerCase();
