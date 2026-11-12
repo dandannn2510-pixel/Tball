@@ -1,5 +1,5 @@
 // ========================================================
-// Configuration for SEAMEO Smart Sensor & Control Dashboard
+// Configuration for SEAMEO Smart Water Monitoring Dashboard
 // ========================================================
 
 const CONFIG = {
@@ -12,22 +12,21 @@ const CONFIG = {
     // หมายเลขเครื่องเริ่มต้น (ให้ทุกเครื่องที่เปิดเว็บเชื่อมต่อเข้าเครื่องเดียวกันอัตโนมัติ)
     DEFAULT_MACHINE_ID: "00002",
 
+    // ปริมาตรน้ำต่อรอบ (1 ครั้ง = 100 ลิตร)
+    LITERS_PER_CYCLE: 100,
+
     // Request timeout (ms)
     REQUEST_TIMEOUT_MS: 25000,
 
-    // ดึงค่าเซนเซอร์และสถานะสวิตช์ล่าสุดทุกๆ 2 วินาที เพื่อให้ทุกเครื่องซิงค์ตรงกันแบบเรียลไทม์
+    // ดึงค่าเซนเซอร์และจำนวนรอบจากช่อง ec ล่าสุดทุกๆ 2 วินาที
     POLL_INTERVAL_MS: 2000,
 
-    // รีเฟรชกราฟทุกๆ กี่ ms
-    HISTORY_REFRESH_MS: 60000,
+    // รีเฟรชกราฟทุกๆ 10 วินาที
+    HISTORY_REFRESH_MS: 10000,
 
-    // หลังกดสวิตช์ จะล็อกสวิตช์ในเครื่องที่กดกี่ ms เพื่อรอให้คลาวด์บันทึกเสร็จ
-    SWITCH_LOCK_MS: 4500,
-
-    // เกณฑ์แจ้งเตือน (อุณหภูมิน้ำ, pH, ระดับน้ำ)
+    // เกณฑ์แจ้งเตือน (อุณหภูมิน้ำ Temp และ pH)
     THRESHOLDS: {
         temp: { danger: 40, risky: 35 },
-        ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 },
-        level: { low: 20, high: 95 }
+        ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 }
     }
 };

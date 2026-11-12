@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEAMEO — ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ</title>
+    <title>SEAMEO — ระบบติดตามคุณภาพน้ำ (Temp &amp; pH) และสรุปรอบการทำงาน-ปริมาตรน้ำรายวัน</title>
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23071324' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M32 12 C32 12 18 29 18 39 C18 46.7 24.3 53 32 53 C39.7 53 46 46.7 46 39 C46 29 32 12 32 12 Z' fill='url(%23g)'/%3E%3Cpath d='M22 39 Q27 34 32 39 T42 39' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -121,43 +121,43 @@
                     </div>
                     <div>
                         <div class="text-base font-bold tracking-wider uppercase text-white">SEAMEO</div>
-                        <div class="text-xs text-sky-200/80">Smart Water Monitoring &amp; Control</div>
+                        <div class="text-xs text-sky-200/80">Smart Water Quality &amp; Volume Telemetry</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ข้อความหลักและตารางสรุป 4 ส่วน -->
+            <!-- ข้อความหลักและตารางสรุป -->
             <div class="relative z-10 mt-auto pt-12 max-w-2xl">
                 <h1 class="font-display graphic-title text-3xl sm:text-4xl font-bold text-white">
-                    ระบบตรวจวัดคุณภาพน้ำ<br>
-                    <span class="text-sky-300 font-semibold">และควบคุมชุดบำบัดอัตโนมัติ</span>
+                    ระบบแสดงผลคุณภาพน้ำ<br>
+                    <span class="text-sky-300 font-semibold">จำนวนรอบการทำงาน และปริมาตรน้ำรายวัน</span>
                 </h1>
 
                 <p class="text-sm sm:text-base text-slate-200 leading-relaxed mt-4 max-w-xl">
-                    ติดตามค่าอุณหภูมิน้ำ ความเป็นกรด-ด่าง (pH) และระดับน้ำแบบเรียลไทม์
-                    พร้อมแผงสวิตช์ควบคุมมอเตอร์ ปั๊มน้ำ แผ่นอะลูมิเนียม และวาล์วน้ำไฟฟ้า
+                    ติดตามค่าอุณหภูมิน้ำ (Temp) และความเป็นกรด-ด่าง (pH) แบบเรียลไทม์
+                    พร้อมแสดงจำนวนครั้งการทำงานต่อวัน ปริมาตรน้ำที่ได้ (จำนวนครั้ง × 100 ลิตร) และกราฟสรุปจำนวนรอบรายวัน
                 </p>
 
                 <div class="mt-10 pt-6 border-t border-white/20 grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
                         <div class="text-xs font-semibold text-orange-300">1. อุณหภูมิน้ำ</div>
                         <div class="text-sm font-bold text-white mt-0.5">Temperature</div>
-                        <div class="text-xs text-white/70 mt-0.5">ปกติ &lt; 35.0 °C</div>
+                        <div class="text-xs text-white/70 mt-0.5">เกณฑ์ปกติ &lt; 35.0 °C</div>
                     </div>
                     <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
                         <div class="text-xs font-semibold text-sky-300">2. ค่ากรด-ด่าง</div>
                         <div class="text-sm font-bold text-white mt-0.5">pH Level</div>
-                        <div class="text-xs text-white/70 mt-0.5">ปกติ 5.50 – 7.50</div>
+                        <div class="text-xs text-white/70 mt-0.5">เกณฑ์ปกติ 5.50 – 7.50</div>
                     </div>
                     <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
-                        <div class="text-xs font-semibold text-teal-300">3. ระดับน้ำ</div>
-                        <div class="text-sm font-bold text-white mt-0.5">Water Level</div>
-                        <div class="text-xs text-white/70 mt-0.5">ปกติ 20% – 95%</div>
+                        <div class="text-xs font-semibold text-emerald-300">3. จำนวนรอบ/วัน</div>
+                        <div class="text-sm font-bold text-white mt-0.5">ดึงจากช่อง EC</div>
+                        <div class="text-xs text-white/70 mt-0.5">แสดงจำนวนครั้งต่อวัน</div>
                     </div>
                     <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/15">
-                        <div class="text-xs font-semibold text-emerald-300">4. ชุดควบคุม</div>
-                        <div class="text-sm font-bold text-white mt-0.5">สวิตช์ 4 ช่อง</div>
-                        <div class="text-xs text-white/70 mt-0.5">มอเตอร์·ปั๊ม·แผ่น·วาล์ว</div>
+                        <div class="text-xs font-semibold text-teal-300">4. ปริมาตรน้ำที่ได้</div>
+                        <div class="text-sm font-bold text-white mt-0.5">ครั้ง × 100 ลิตร</div>
+                        <div class="text-xs text-white/70 mt-0.5">พร้อมกราฟสรุปรายวัน</div>
                     </div>
                 </div>
             </div>
@@ -177,10 +177,10 @@
             <div class="my-10 lg:my-auto max-w-[360px] w-full mx-auto">
                 <div class="mb-7">
                     <h2 id="authTitle" class="graphic-title text-2xl sm:text-3xl font-bold text-slate-900">
-                        เข้าสู่ระบบควบคุม
+                        เข้าสู่หน้าแสดงผลข้อมูล
                     </h2>
                     <p class="text-sm text-slate-500 mt-1.5">
-                        กรอกชื่อผู้ใช้งานเพื่อเข้าถึงหน้าแสดงผลและสั่งการอุปกรณ์
+                        กรอกชื่อผู้ใช้งานเพื่อเข้าดูข้อมูลคุณภาพน้ำ จำนวนรอบ และปริมาตรน้ำรายวัน
                     </p>
                 </div>
 
@@ -210,7 +210,7 @@
 
                     <button type="submit" id="authSubmitBtn"
                         class="w-full py-3.5 px-5 rounded-lg bg-[#0B2545] hover:bg-sky-800 text-white text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm">
-                        <span id="authSubmitText">เข้าสู่แผงควบคุมระบบ</span>
+                        <span id="authSubmitText">เข้าสู่หน้าจอแสดงผล</span>
                     </button>
                 </form>
 
@@ -224,13 +224,13 @@
 
             <div class="text-xs text-slate-400 flex items-center justify-between pt-4 border-t border-slate-100">
                 <span>SEAMEO SYSTEM</span>
-                <span class="font-mono-num">SMART WATER DASHBOARD</span>
+                <span class="font-mono-num">SMART WATER MONITOR</span>
             </div>
         </div>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- 2. หน้าแผงควบคุมหลัก (MAIN DASHBOARD)                                   -->
+    <!-- 2. หน้าแสดงผลหลัก (MAIN MONITORING DASHBOARD)                          -->
     <!-- ===================================================================== -->
     <div id="dashboardScreen" class="hidden flex-1 flex flex-col">
 
@@ -252,10 +252,10 @@
                         <div class="flex items-center gap-2">
                             <span class="font-display font-bold text-base tracking-wider text-white">SEAMEO</span>
                             <span
-                                class="text-[11px] font-mono-num font-semibold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">LIVE</span>
+                                class="text-[11px] font-mono-num font-semibold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">MONITOR</span>
                         </div>
                         <h1 class="font-display text-xs sm:text-sm text-sky-100/80">
-                            ระบบตรวจวัดคุณภาพน้ำและควบคุมชุดบำบัดอัตโนมัติ
+                            ระบบแสดงผลคุณภาพน้ำ (Temp &amp; pH) จำนวนรอบการทำงาน และปริมาตรน้ำที่ได้
                         </h1>
                     </div>
                 </div>
@@ -288,11 +288,11 @@
             </div>
         </header>
 
-        <!-- พื้นที่เนื้อหาหลัก แยกเป็น 4 ส่วนชัดเจน -->
+        <!-- พื้นที่เนื้อหาหลัก (เฉพาะแสดงผลข้อมูลและกราฟ) -->
         <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
 
             <!-- ============================================================= -->
-            <!-- ส่วนควบคุมการเชื่อมต่อเครื่อง & สรุปสถานะน้ำ                      -->
+            <!-- ส่วนเชื่อมต่อหมายเลขเครื่อง & สรุปสถานะคุณภาพน้ำ                 -->
             <!-- ============================================================= -->
             <div
                 class="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -307,7 +307,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <input type="text" id="machineIdInput" placeholder="เช่น ESP32-01"
+                        <input type="text" id="machineIdInput" placeholder="เช่น 00002"
                             class="px-3.5 py-2 text-sm font-mono-num font-semibold border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 w-40 sm:w-44 bg-slate-50 text-slate-900">
                         <button onclick="bindMachine()"
                             class="px-4 py-2 text-xs font-semibold text-white bg-[#0B2545] hover:bg-sky-800 rounded-lg transition flex items-center gap-1.5">
@@ -332,7 +332,7 @@
             </div>
 
             <!-- ============================================================= -->
-            <!-- ส่วนที่ 1: แสดงผลค่าเซนเซอร์ 3 ตัว (อุณหภูมิน้ำ, pH, ระดับน้ำ)       -->
+            <!-- ส่วนที่ 1: แสดงผลค่าเซนเซอร์ (Temp, pH) และจำนวนครั้ง + ปริมาตรน้ำต่อวัน -->
             <!-- ============================================================= -->
             <section class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-5 sm:p-6">
                 <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-100">
@@ -342,9 +342,11 @@
                         </div>
                         <div>
                             <h2 class="font-display text-base sm:text-lg font-bold text-slate-900">
-                                ข้อมูลตรวจวัดคุณภาพน้ำและระดับน้ำปัจจุบัน
+                                ข้อมูลคุณภาพน้ำปัจจุบัน จำนวนรอบการทำงาน และปริมาตรน้ำที่ได้ต่อวัน
                             </h2>
-                            <p class="text-xs text-slate-500">แสดงผลค่าอุณหภูมิน้ำ ความเป็นกรด-ด่าง (pH) และระดับน้ำแบบเรียลไทม์</p>
+                            <p class="text-xs text-slate-500">
+                                แสดงค่าอุณหภูมิ (Temp), ความเป็นกรด-ด่าง (pH), จำนวนครั้งต่อวัน (จากช่อง <code class="font-mono-num font-semibold text-emerald-700">ec</code>) และปริมาตรน้ำที่ได้ (จำนวนครั้ง × 100 ลิตร)
+                            </p>
                         </div>
                     </div>
                     <span class="text-xs font-medium text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/70">
@@ -354,7 +356,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                    <!-- การ์ด 1: อุณหภูมิน้ำ (สีส้ม) -->
+                    <!-- การ์ด 1: อุณหภูมิน้ำ (Temp) -->
                     <div class="bg-white border-2 border-orange-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
                         <div class="h-2 bg-orange-500"></div>
                         <div class="p-5 flex-1 flex flex-col justify-between">
@@ -365,7 +367,7 @@
                                     </div>
                                     <div>
                                         <h3 class="font-display text-base font-bold text-slate-900">
-                                            อุณหภูมิน้ำ (Temperature)
+                                            อุณหภูมิน้ำ (Temp)
                                         </h3>
                                         <p class="text-xs text-slate-500">เกณฑ์ปกติ &lt; 35.0 °C</p>
                                     </div>
@@ -402,7 +404,7 @@
                         </div>
                     </div>
 
-                    <!-- การ์ด 2: ความเป็นกรด-ด่าง pH (สีฟ้า) -->
+                    <!-- การ์ด 2: ความเป็นกรด-ด่าง (pH) -->
                     <div class="bg-white border-2 border-sky-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
                         <div class="h-2 bg-sky-500"></div>
                         <div class="p-5 flex-1 flex flex-col justify-between">
@@ -450,50 +452,54 @@
                         </div>
                     </div>
 
-                    <!-- การ์ด 3: ระดับน้ำ (สีเขียวอมฟ้า Teal) -->
-                    <div class="bg-white border-2 border-teal-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-                        <div class="h-2 bg-teal-500"></div>
+                    <!-- การ์ด 3: จำนวนครั้งต่อวัน (จากช่อง EC) และปริมาตรน้ำที่ได้ (จำนวนครั้ง × 100 ลิตร) -->
+                    <div class="bg-white border-2 border-emerald-100 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div class="h-2 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
                         <div class="p-5 flex-1 flex flex-col justify-between">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="w-10 h-10 rounded-lg bg-teal-50 border border-teal-200/70 text-teal-600 flex items-center justify-center shrink-0">
-                                        <i data-lucide="waves" class="w-5 h-5"></i>
+                                    <div class="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center shrink-0">
+                                        <i data-lucide="droplets" class="w-5 h-5"></i>
                                     </div>
                                     <div>
                                         <h3 class="font-display text-base font-bold text-slate-900">
-                                            ระดับน้ำ (Water Level)
+                                            จำนวนรอบ &amp; ปริมาตรน้ำต่อวัน
                                         </h3>
-                                        <p class="text-xs text-slate-500">เกณฑ์ปกติ 20% – 95%</p>
+                                        <p class="text-xs text-slate-500">ดึงจำนวนครั้งจากช่อง <code class="font-mono-num font-semibold text-emerald-700">ec</code> • รอบละ 100 ลิตร</p>
                                     </div>
                                 </div>
-                                <span id="levelStatus"
+                                <span id="cycleStatusBadge"
                                     class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0">รอข้อมูล</span>
                             </div>
 
-                            <div class="my-5 flex items-end justify-between gap-3">
-                                <div class="flex items-baseline gap-1.5">
-                                    <span id="levelCurrent"
-                                        class="graphic-num text-4xl sm:text-5xl font-bold text-slate-900">--</span>
-                                    <span id="levelUnit"
-                                        class="text-base font-mono-num font-semibold text-teal-600">%</span>
+                            <!-- แสดงคู่กันทั้ง จำนวนครั้ง และ ปริมาตรน้ำที่ได้ (ครั้ง × 100 ลิตร) -->
+                            <div class="my-4 grid grid-cols-2 gap-3">
+                                <div class="rounded-xl bg-emerald-50/70 border border-emerald-200/80 p-3 flex flex-col justify-between">
+                                    <span class="text-[11px] font-semibold text-emerald-800">จำนวนการทำงานวันนี้</span>
+                                    <div class="flex items-baseline gap-1.5 mt-1">
+                                        <span id="cycleCountCurrent"
+                                            class="graphic-num text-3xl sm:text-4xl font-bold text-slate-900">--</span>
+                                        <span class="text-xs font-mono-num font-bold text-emerald-700">ครั้ง</span>
+                                    </div>
                                 </div>
-                                <svg class="w-24 h-14 shrink-0" viewBox="0 0 120 68">
-                                    <path d="M 14 58 A 46 46 0 0 1 106 58" fill="none" stroke="#F0FDFA"
-                                        stroke-width="10" stroke-linecap="round" />
-                                    <path id="levelGaugeArc" class="gauge-arc" d="M 14 58 A 46 46 0 0 1 106 58"
-                                        fill="none" stroke="#0D9488" stroke-width="10" stroke-linecap="round"
-                                        stroke-dasharray="144.5" stroke-dashoffset="144.5" />
-                                </svg>
+
+                                <div class="rounded-xl bg-teal-50/80 border border-teal-200/80 p-3 flex flex-col justify-between">
+                                    <span class="text-[11px] font-semibold text-teal-800">ปริมาตรน้ำที่ได้วันนี้</span>
+                                    <div class="flex items-baseline gap-1.5 mt-1">
+                                        <span id="volumeCurrent"
+                                            class="graphic-num text-3xl sm:text-4xl font-bold text-teal-700">--</span>
+                                        <span class="text-xs font-mono-num font-bold text-teal-700">ลิตร</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="pt-3 border-t border-slate-100">
-                                <div class="w-full h-2 bg-teal-100/70 rounded-full overflow-hidden">
-                                    <div id="levelBarFill" class="bar-fill h-full bg-teal-500 rounded-full" style="width: 0%"></div>
+                                <div class="w-full h-2 bg-emerald-100/70 rounded-full overflow-hidden">
+                                    <div id="cycleBarFill" class="bar-fill h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style="width: 0%"></div>
                                 </div>
-                                <div class="flex justify-between text-[11px] font-mono-num text-slate-500 mt-1.5">
-                                    <span>0% (ต่ำ)</span>
-                                    <span class="text-teal-600 font-medium">ปกติ 20% – 95%</span>
-                                    <span>100% (เต็ม)</span>
+                                <div class="flex items-center justify-between text-[11px] font-mono-num text-slate-500 mt-1.5">
+                                    <span id="volumeFormulaText" class="text-emerald-700 font-medium">สูตรคำนวณ: จำนวนครั้ง × 100 ลิตร</span>
+                                    <span>อัปเดต: <strong id="lastCycleTime" class="text-slate-700">--:--:--</strong></span>
                                 </div>
                             </div>
                         </div>
@@ -503,186 +509,25 @@
             </section>
 
             <!-- ============================================================= -->
-            <!-- ส่วนที่ 2: แผงควบคุมอุปกรณ์และวาล์วน้ำไฟฟ้า (4 ช่องสัญญาณ)       -->
-            <!-- ============================================================= -->
-            <section class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-5 sm:p-6">
-                <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-[#0B2545] text-white flex items-center justify-center font-display font-bold text-sm">
-                            2
-                        </div>
-                        <div>
-                            <h2 class="font-display text-base sm:text-lg font-bold text-slate-900">
-                                แผงควบคุมชุดขับเคลื่อน ระบบบำบัด และวาล์วน้ำไฟฟ้า
-                            </h2>
-                            <p class="text-xs text-slate-500">
-                                สั่งเปิด-ปิดอุปกรณ์แบบเรียลไทม์ (มอเตอร์และแผ่นอะลูมิเนียมสลับการทำงานอัตโนมัติ • วาล์วน้ำไฟฟ้าเป็นรีเลย์แยกอิสระ)
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- แถบสรุปสถานะอุปกรณ์ที่กำลังเปิดทำงาน -->
-                <div id="activeEquipmentBanner"
-                    class="mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span id="activeEquipmentDot" class="led-dot led-standby"></span>
-                        <span class="font-bold text-slate-700">สถานะอุปกรณ์ปัจจุบัน:</span>
-                        <span id="activeEquipmentList" class="text-slate-600">ไม่มีอุปกรณ์กำลังทำงาน (หยุดพักทั้งหมด)</span>
-                    </div>
-                    <span class="text-[11px] text-slate-400">ซิงค์สถานะตรงกันทุกหน้าจออัตโนมัติ</span>
-                </div>
-
-                <!-- ตารางสวิตช์ควบคุม 4 ตัว เรียงลำดับ 1 -> 2 -> 3 -> 4 -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                    <!-- 1. ช่องสัญญาณที่ 1: มอเตอร์ -->
-                    <div id="motor1Card"
-                        class="border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/50 transition-all duration-200">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <span class="inline-block px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[11px] font-semibold mb-1.5">
-                                    ช่องสัญญาณที่ 1
-                                </span>
-                                <h3 class="font-display font-bold text-slate-900 text-base">มอเตอร์ (Motor)</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">ชุดใบพัดกวนน้ำ (สลับกับช่อง 3)</p>
-                            </div>
-                            <div class="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
-                                <i data-lucide="cog" class="w-5 h-5"></i>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span id="motor1Led" class="led-dot led-standby"></span>
-                                <span id="motor1StateText" class="text-xs font-semibold text-slate-500">หยุดพัก (OFF)</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="motor1Toggle" onchange="toggleDevice('motor1Toggle', '1')"
-                                    class="sr-only peer">
-                                <div
-                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600">
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 2. ช่องสัญญาณที่ 2: ปั๊มน้ำ -->
-                    <div id="motor2Card"
-                        class="border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/50 transition-all duration-200">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <span class="inline-block px-2 py-0.5 rounded bg-teal-100 text-teal-800 text-[11px] font-semibold mb-1.5">
-                                    ช่องสัญญาณที่ 2
-                                </span>
-                                <h3 class="font-display font-bold text-slate-900 text-base">ปั๊มน้ำ (Water Pump)</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">สูบจ่ายและหมุนเวียนน้ำ</p>
-                            </div>
-                            <div class="w-10 h-10 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 shrink-0">
-                                <i data-lucide="waves" class="w-5 h-5"></i>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span id="motor2Led" class="led-dot led-standby"></span>
-                                <span id="motor2StateText" class="text-xs font-semibold text-slate-500">หยุดพัก (OFF)</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="motor2Toggle" onchange="toggleDevice('motor2Toggle', '2')"
-                                    class="sr-only peer">
-                                <div
-                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600">
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 3. ช่องสัญญาณที่ 3 (คอลัมน์ pump1): แผ่นอะลูมิเนียม -->
-                    <div id="pump1Card"
-                        class="border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/50 transition-all duration-200">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <span class="inline-block px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[11px] font-semibold mb-1.5">
-                                    ช่องสัญญาณที่ 3 (pump1)
-                                </span>
-                                <h3 class="font-display font-bold text-slate-900 text-base">แผ่นอะลูมิเนียม</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">ชุดบำบัดน้ำ (สลับกับมอเตอร์ ช่อง 1)</p>
-                            </div>
-                            <div class="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0">
-                                <i data-lucide="layers" class="w-5 h-5"></i>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span id="pump1Led" class="led-dot led-standby"></span>
-                                <span id="pump1StateText" class="text-xs font-semibold text-slate-500">หยุดพัก (OFF)</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="pump1Toggle" onchange="toggleDevice('pump1Toggle', '3')"
-                                    class="sr-only peer">
-                                <div
-                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-emerald-600">
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 4. ช่องสัญญาณที่ 4 (คอลัมน์ pump2): วาล์วน้ำไฟฟ้า -->
-                    <div id="valveCard"
-                        class="border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/50 transition-all duration-200">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <span class="inline-block px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-[11px] font-semibold mb-1.5">
-                                    ช่องสัญญาณที่ 4 (pump2)
-                                </span>
-                                <h3 class="font-display font-bold text-slate-900 text-base">วาล์วน้ำไฟฟ้า</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">เปิด-ปิดวาล์วน้ำแบบไฟฟ้า</p>
-                            </div>
-                            <div class="w-10 h-10 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 shrink-0">
-                                <i data-lucide="droplets" class="w-5 h-5"></i>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span id="valveLed" class="led-dot led-standby"></span>
-                                <span id="valveStateText" class="text-xs font-semibold text-slate-500">ปิดวาล์ว (CLOSED)</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="valveToggle" onchange="toggleDevice('valveToggle', '4')"
-                                    class="sr-only peer">
-                                <div
-                                    class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-sky-600">
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-            <!-- ============================================================= -->
-            <!-- ส่วนที่ 3: กราฟวิเคราะห์แนวโน้มข้อมูลย้อนหลัง                      -->
+            <!-- ส่วนที่ 2: กราฟวิเคราะห์แนวโน้มและกราฟสรุปจำนวนรอบรายวัน         -->
             <!-- ============================================================= -->
             <section class="bg-white border border-slate-200/90 rounded-xl shadow-sm p-5 sm:p-6 space-y-5">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-display font-bold text-sm">
-                            3
+                            2
                         </div>
                         <div>
                             <h2 class="font-display text-base sm:text-lg font-bold text-slate-900">
-                                กราฟวิเคราะห์แนวโน้มข้อมูลย้อนหลัง
+                                กราฟวิเคราะห์คุณภาพน้ำ (Temp &amp; pH) และกราฟสรุปจำนวนรอบ-ปริมาตรน้ำรายวัน
                             </h2>
-                            <p id="historyCount" class="text-xs text-slate-500">ข้อมูลที่บันทึก: 0 รายการ</p>
+                            <p id="historyCount" class="text-xs text-slate-500">ข้อมูลที่บันทึกในวันที่เลือก: 0 รายการ</p>
                         </div>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2.5">
                         <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-                            <label for="datePicker" class="text-xs font-semibold text-slate-600">วันที่:</label>
+                            <label for="datePicker" class="text-xs font-semibold text-slate-600">วันที่ดูTemp/pH:</label>
                             <input type="date" id="datePicker" onchange="fetchHistory()"
                                 class="text-xs font-mono-num text-slate-800 focus:outline-none bg-transparent">
                         </div>
@@ -734,19 +579,51 @@
                         </div>
                     </div>
 
-                    <!-- กราฟที่ 3: ระดับน้ำ -->
-                    <div class="lg:col-span-2 border border-teal-200/80 rounded-xl p-4 bg-teal-50/20">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <!-- กราฟที่ 3 (ช่อง Water Level เดิม): เก็บเป็นวันๆ ว่าแต่ละวันได้กี่รอบ และแสดงปริมาตรน้ำ (รอบ × 100 ลิตร) -->
+                    <div class="lg:col-span-2 border border-teal-200/80 rounded-xl p-4 sm:p-5 bg-teal-50/20 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full bg-teal-600"></span>
-                                <h3 class="font-display text-sm font-bold text-slate-800">แนวโน้มระดับน้ำในระบบ (%)</h3>
+                                <div>
+                                    <h3 class="font-display text-sm sm:text-base font-bold text-slate-800">
+                                        กราฟสรุปจำนวนรอบการทำงานและปริมาตรน้ำที่ได้แยกตามวัน (รายวัน)
+                                    </h3>
+                                    <p class="text-xs text-slate-500">
+                                        เก็บข้อมูลเป็นรายวันว่าแต่ละวันทำงานได้กี่รอบ (ครั้ง) และคิดเป็นปริมาตรน้ำกี่ลิตร (จำนวนครั้ง × 100 ลิตร)
+                                    </p>
+                                </div>
                             </div>
-                            <div id="levelStats" class="text-xs font-mono-num text-slate-600 bg-white px-2.5 py-1 rounded border border-slate-200">
-                                ต่ำสุด: -- | เฉลี่ย: -- | สูงสุด: --
+                            <div id="dailySummaryStats" class="text-xs font-mono-num text-teal-800 bg-white px-3 py-1.5 rounded-lg border border-teal-200 font-semibold">
+                                วันนี้: 0 ครั้ง (0 ลิตร)
                             </div>
                         </div>
-                        <div class="h-56 relative bg-white rounded-lg p-2 border border-slate-100">
+
+                        <div class="h-64 relative bg-white rounded-lg p-3 border border-slate-100">
                             <canvas id="levelChart"></canvas>
+                        </div>
+
+                        <!-- ตารางสรุปจำนวนรอบและปริมาตรน้ำแยกตามวัน -->
+                        <div class="bg-white rounded-lg border border-slate-200/80 overflow-hidden">
+                            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-700">ตารางบันทึกจำนวนรอบและปริมาตรน้ำแยกตามวัน</span>
+                                <span class="text-[11px] font-mono-num text-slate-500">ปริมาตรน้ำ = จำนวนครั้ง × 100 ลิตร</span>
+                            </div>
+                            <div class="overflow-x-auto max-h-48">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="border-b border-slate-100 text-slate-500 bg-slate-50/50">
+                                            <th class="py-2 px-4 font-semibold">วันที่</th>
+                                            <th class="py-2 px-4 font-semibold text-right">จำนวนรอบที่ได้ (ครั้ง)</th>
+                                            <th class="py-2 px-4 font-semibold text-right">ปริมาตรน้ำที่ได้ (ลิตร)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dailyRoundsTableBody" class="divide-y divide-slate-100 font-mono-num">
+                                        <tr>
+                                            <td colspan="3" class="py-4 px-4 text-center text-slate-400">กำลังโหลดข้อมูลรายวัน...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -756,8 +633,8 @@
 
         <footer class="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div>SEAMEO — ระบบตรวจวัดคุณภาพน้ำและควบคุมการบำบัดอัตโนมัติ</div>
-                <div class="font-mono-num text-[11px]">SEAMEO SMART WATER TELEMETRY</div>
+                <div>SEAMEO — ระบบติดตามคุณภาพน้ำ (Temp &amp; pH) และสรุปจำนวนรอบ-ปริมาตรน้ำรายวัน</div>
+                <div class="font-mono-num text-[11px]">SEAMEO SMART WATER MONITOR</div>
             </div>
         </footer>
     </div>
@@ -779,7 +656,7 @@
             <form onsubmit="submitNewMachine(event)" class="p-5 space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">หมายเลขเครื่อง (Machine ID)</label>
-                    <input type="text" id="newMachineIdInput" required placeholder="เช่น ESP32-01"
+                    <input type="text" id="newMachineIdInput" required placeholder="เช่น 00002"
                         class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 text-slate-900 font-mono-num text-sm">
                 </div>
 
@@ -799,25 +676,24 @@
 
     <script>
         // ========================================================
-        // Configuration for SEAMEO Smart Sensor & Control Dashboard
+        // Configuration for SEAMEO Smart Water Monitoring Dashboard
         // ========================================================
         const CONFIG = {
             GAS_URL: "https://script.google.com/macros/s/AKfycbyW_f_iNkLrh3U4hPlSX8-X2ldmRLgTnsrZvWUD-qIqchbCkIlVG-1xYE9WRgiDNscw/exec",
             PROXY_URL: "/api",
             DEFAULT_MACHINE_ID: "00002",
+            LITERS_PER_CYCLE: 100,
             REQUEST_TIMEOUT_MS: 25000,
             POLL_INTERVAL_MS: 2000,
-            HISTORY_REFRESH_MS: 60000,
-            SWITCH_LOCK_MS: 4500,
+            HISTORY_REFRESH_MS: 10000,
             THRESHOLDS: {
                 temp: { danger: 40, risky: 35 },
-                ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 },
-                level: { low: 20, high: 95 }
+                ph: { dangerMin: 4, dangerMax: 9, riskyMin: 5.5, riskyMax: 7.5 }
             }
         };
 
         // ========================================================
-        // SEAMEO — Water Quality Telemetry & Control System (No EC)
+        // SEAMEO — Temp, pH, EC = Cycle Count, Volume = Count * 100L, Daily Chart
         // ========================================================
         let currentMachine = '';
         let pollTimer = null;
@@ -827,89 +703,10 @@
         let apiBase = null;
         let machineNotFoundWarned = false;
         let lastHistoryRecords = [];
-        let lastServerData = null;
-        let hasInitialSwitchSync = false;
-        const switchLocks = {};
-        const knownSwitchState = {};
+        let allHistoryRecords = [];
+        let currentEcCycles = null;
 
-        const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('seameo_switch_sync') : null;
-
-        const DEVICES = [
-            {
-                id: 'motor1Toggle',
-                cardId: 'motor1Card',
-                code: '1',
-                onCmd: '0',
-                offCmd: '1',
-                name: 'มอเตอร์ (ช่อง 1)',
-                field: 'motor1_command',
-                ledId: 'motor1Led',
-                textId: 'motor1StateText',
-                onLabel: 'กำลังทำงาน (ON)',
-                offLabel: 'หยุดพัก (OFF)',
-                activeTheme: 'emerald'
-            },
-            {
-                id: 'motor2Toggle',
-                cardId: 'motor2Card',
-                code: '2',
-                onCmd: '0',
-                offCmd: '2',
-                name: 'ปั๊มน้ำ (ช่อง 2)',
-                field: 'motor2_command',
-                ledId: 'motor2Led',
-                textId: 'motor2StateText',
-                onLabel: 'กำลังทำงาน (ON)',
-                offLabel: 'หยุดพัก (OFF)',
-                activeTheme: 'emerald'
-            },
-            {
-                id: 'pump1Toggle',
-                cardId: 'pump1Card',
-                code: '3',
-                onCmd: '0',
-                offCmd: '3',
-                name: 'แผ่นอะลูมิเนียม (pump1)',
-                field: 'pump1_command',
-                ledId: 'pump1Led',
-                textId: 'pump1StateText',
-                onLabel: 'กำลังทำงาน (ON)',
-                offLabel: 'หยุดพัก (OFF)',
-                activeTheme: 'emerald'
-            },
-            {
-                id: 'valveToggle',
-                cardId: 'valveCard',
-                code: '4',
-                onCmd: '0',
-                offCmd: '4',
-                name: 'วาล์วน้ำไฟฟ้า (pump2)',
-                field: 'pump2_command',
-                ledId: 'valveLed',
-                textId: 'valveStateText',
-                onLabel: 'เปิดวาล์ว (OPEN)',
-                offLabel: 'ปิดวาล์ว (CLOSED)',
-                activeTheme: 'sky'
-            }
-        ];
-
-        // กฎ Interlock: มอเตอร์ (ช่อง 1 / motor1) กับ แผ่นอะลูมิเนียม (ช่อง 3 / pump1) ห้ามเปิดพร้อมกัน
-        const EXCLUSIVE_PAIRS = { '1': '3', '3': '1' };
-
-        function isDeviceOnValue(dev, rawVal) {
-            if (rawVal === undefined || rawVal === null || rawVal === '') return false;
-            return String(rawVal).trim() === dev.onCmd;
-        }
-
-        function getLocalValveFallback(machineId) {
-            if (!machineId) return '5';
-            return localStorage.getItem('seameo_valve_' + machineId) || '5';
-        }
-
-        function setLocalValveFallback(machineId, cmd) {
-            if (!machineId) return;
-            localStorage.setItem('seameo_valve_' + machineId, String(cmd));
-        }
+        const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('seameo_monitor_sync') : null;
 
         async function fetchWithTimeout(url, options = {}, timeoutMs = CONFIG.REQUEST_TIMEOUT_MS) {
             const controller = new AbortController();
@@ -974,7 +771,10 @@
             }
 
             document.addEventListener('visibilitychange', () => {
-                if (!document.hidden && currentMachine) fetchCurrentData();
+                if (!document.hidden && currentMachine) {
+                    fetchCurrentData();
+                    fetchHistory();
+                }
             });
 
             if (syncChannel) {
@@ -984,8 +784,6 @@
                     if (msg.type === 'MACHINE_CHANGED' && msg.machineId && msg.machineId !== currentMachine) {
                         document.getElementById('machineIdInput').value = msg.machineId;
                         bindMachine(msg.machineId, true);
-                    } else if (msg.type === 'SWITCH_UPDATED' && msg.switches) {
-                        applySwitchMap(msg.switches, true);
                     }
                 };
             }
@@ -1029,6 +827,15 @@
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
 
+        function formatThaiDateLabel(dateKey) {
+            if (!dateKey) return '';
+            const parts = dateKey.split('-');
+            if (parts.length !== 3) return dateKey;
+            const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            if (isNaN(d.getTime())) return dateKey;
+            return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        }
+
         function escapeHtml(str) {
             return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
@@ -1038,13 +845,11 @@
             return parseFloat(value).toFixed(2);
         }
 
-        function extractWaterLevel(data) {
-            if (!data) return null;
-            const candidates = [data.current_water_level, data.water_level, data.current_level, data.level];
-            for (const val of candidates) {
-                if (val !== undefined && val !== null && String(val).trim() !== '') return val;
-            }
-            return null;
+        function parseCycleCount(rawVal) {
+            if (rawVal === '' || rawVal === null || rawVal === undefined) return null;
+            const num = parseFloat(rawVal);
+            if (isNaN(num) || num < 0) return null;
+            return Number.isInteger(num) ? num : Number(num.toFixed(2));
         }
 
         function showToast(message, type = 'info') {
@@ -1083,6 +888,233 @@
             if (box) { box.className = 'hidden'; box.innerHTML = ''; }
         }
 
+        // ========================================================
+        // ระบบเก็บจำนวนรอบรายวัน (จากช่อง EC) และคำนวณปริมาตรน้ำ (ครั้ง * 100 ลิตร)
+        // ========================================================
+        function getDailyRoundsStorageKey(machineId) {
+            return 'seameo_daily_rounds_map_' + machineId;
+        }
+
+        function getStoredDailyRoundsMap(machineId) {
+            if (!machineId) return {};
+            try {
+                const raw = localStorage.getItem(getDailyRoundsStorageKey(machineId));
+                return raw ? JSON.parse(raw) : {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function saveDailyRoundForDate(machineId, dateKey, cycles) {
+            if (!machineId || !dateKey || cycles === null || isNaN(cycles)) return;
+            const map = getStoredDailyRoundsMap(machineId);
+            map[dateKey] = cycles;
+            try {
+                localStorage.setItem(getDailyRoundsStorageKey(machineId), JSON.stringify(map));
+            } catch (_) {}
+        }
+
+        function updateCycleAndVolumeCard(rawEcValue) {
+            const countEl = document.getElementById('cycleCountCurrent');
+            const volEl = document.getElementById('volumeCurrent');
+            const badgeEl = document.getElementById('cycleStatusBadge');
+            const formulaEl = document.getElementById('volumeFormulaText');
+            const barEl = document.getElementById('cycleBarFill');
+            const timeEl = document.getElementById('lastCycleTime');
+
+            const cycles = parseCycleCount(rawEcValue);
+            currentEcCycles = cycles;
+
+            if (cycles === null) {
+                if (countEl) countEl.innerText = '--';
+                if (volEl) volEl.innerText = '--';
+                if (badgeEl) {
+                    badgeEl.innerText = 'รอข้อมูล';
+                    badgeEl.className = 'px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-500 shrink-0';
+                }
+                if (formulaEl) formulaEl.innerText = 'สูตรคำนวณ: จำนวนครั้ง × 100 ลิตร';
+                if (barEl) barEl.style.width = '0%';
+                return;
+            }
+
+            const volumeLiters = cycles * CONFIG.LITERS_PER_CYCLE;
+            const todayKey = localDateKey(new Date());
+            saveDailyRoundForDate(currentMachine, todayKey, cycles);
+
+            if (countEl) countEl.innerText = cycles.toLocaleString('th-TH');
+            if (volEl) volEl.innerText = volumeLiters.toLocaleString('th-TH');
+            if (timeEl) timeEl.innerText = new Date().toLocaleTimeString('th-TH', { hour12: false });
+            if (formulaEl) {
+                formulaEl.innerText = cycles.toLocaleString('th-TH') + ' ครั้ง × 100 = ' + volumeLiters.toLocaleString('th-TH') + ' ลิตร';
+            }
+            if (badgeEl) {
+                badgeEl.innerText = cycles > 0 ? ('ทำงานแล้ว ' + cycles.toLocaleString('th-TH') + ' ครั้ง') : '0 ครั้ง (พร้อมทำงาน)';
+                badgeEl.className = cycles > 0
+                    ? 'px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0'
+                    : 'px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 shrink-0';
+            }
+
+            const maxScale = Math.max(20, Math.ceil((cycles || 1) / 20) * 20);
+            const pct = Math.max(0, Math.min(100, (cycles / maxScale) * 100));
+            if (barEl) barEl.style.width = pct.toFixed(1) + '%';
+
+            // อัปเดตกราฟรายวันให้ตรงกับค่ารอบของวันนี้ทันที
+            renderDailyRoundsChartAndTable();
+        }
+
+        function buildDailyRoundsSeries() {
+            const byDate = {};
+
+            // 1. ดึงข้อมูลที่เคยบันทึกไว้ในเครื่องสำหรับแต่ละวัน
+            const storedMap = getStoredDailyRoundsMap(currentMachine);
+            Object.entries(storedMap).forEach(([dKey, val]) => {
+                const c = parseCycleCount(val);
+                if (c !== null) byDate[dKey] = c;
+            });
+
+            // 2. คำนวณจำนวนรอบของแต่ละวันจาก SensorHistory (ดูจากช่อง ec หรือ water_level ในแต่ละวัน)
+            if (Array.isArray(allHistoryRecords)) {
+                const rowsByDate = {};
+                allHistoryRecords.forEach(r => {
+                    if (!r.recorded_at) return;
+                    const dKey = localDateKey(r.recorded_at);
+                    if (!dKey) return;
+                    if (!rowsByDate[dKey]) rowsByDate[dKey] = [];
+                    rowsByDate[dKey].push(r);
+                });
+
+                Object.entries(rowsByDate).forEach(([dKey, rows]) => {
+                    const ecNums = rows
+                        .map(r => parseCycleCount(r.ec ?? r.water_level ?? r.level))
+                        .filter(v => v !== null && v > 0);
+                    let dayRounds = 0;
+                    if (ecNums.length > 0) {
+                        // ใช้ค่ารอบสูงสุดของวันนั้นที่เก็บในช่อง ec
+                        dayRounds = Math.max(...ecNums);
+                    } else {
+                        // กรณีในประวัติช่อง ec เป็น 0 ให้ใช้จำนวนแถวที่ส่งขึ้นในวันนั้นแทน
+                        dayRounds = rows.length;
+                    }
+                    byDate[dKey] = Math.max(byDate[dKey] || 0, dayRounds);
+                });
+            }
+
+            // 3. สำหรับวันนี้ ให้ใช้ค่าปัจจุบันจากช่อง current_ec ทันที
+            const todayKey = localDateKey(new Date());
+            if (currentEcCycles !== null) {
+                byDate[todayKey] = currentEcCycles;
+            } else if (byDate[todayKey] === undefined) {
+                byDate[todayKey] = 0;
+            }
+
+            const sortedDates = Object.keys(byDate).sort();
+            return sortedDates.map(dKey => {
+                const rounds = byDate[dKey] || 0;
+                return {
+                    dateKey: dKey,
+                    label: formatThaiDateLabel(dKey) + (dKey === todayKey ? ' (วันนี้)' : ''),
+                    rounds,
+                    liters: rounds * CONFIG.LITERS_PER_CYCLE
+                };
+            });
+        }
+
+        function renderDailyRoundsChartAndTable() {
+            const series = buildDailyRoundsSeries();
+            const todayKey = localDateKey(new Date());
+            const todayEntry = series.find(s => s.dateKey === todayKey) || { rounds: 0, liters: 0 };
+
+            const statsEl = document.getElementById('dailySummaryStats');
+            if (statsEl) {
+                const totalAllDaysRounds = series.reduce((acc, s) => acc + s.rounds, 0);
+                const totalAllDaysLiters = totalAllDaysRounds * CONFIG.LITERS_PER_CYCLE;
+                statsEl.innerText = 'วันนี้: ' + todayEntry.rounds.toLocaleString('th-TH') + ' ครั้ง (' + todayEntry.liters.toLocaleString('th-TH') + ' ลิตร) | สะสมทุกวัน: ' + totalAllDaysRounds.toLocaleString('th-TH') + ' ครั้ง (' + totalAllDaysLiters.toLocaleString('th-TH') + ' ลิตร)';
+            }
+
+            // อัปเดตตารางรายวัน
+            const tbody = document.getElementById('dailyRoundsTableBody');
+            if (tbody) {
+                if (series.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="py-4 px-4 text-center text-slate-400">ยังไม่มีข้อมูลรายวัน</td></tr>';
+                } else {
+                    tbody.innerHTML = [...series].reverse().map(item => {
+                        const isToday = item.dateKey === todayKey;
+                        return '<tr class="' + (isToday ? 'bg-teal-50/60 font-semibold text-slate-900' : 'text-slate-700') + '">' +
+                            '<td class="py-2.5 px-4">' + escapeHtml(item.label) + '</td>' +
+                            '<td class="py-2.5 px-4 text-right text-emerald-700 font-bold">' + item.rounds.toLocaleString('th-TH') + ' ครั้ง</td>' +
+                            '<td class="py-2.5 px-4 text-right text-teal-700 font-bold">' + item.liters.toLocaleString('th-TH') + ' ลิตร</td>' +
+                            '</tr>';
+                    }).join('');
+                }
+            }
+
+            // วาดกราฟแท่งรายวัน (จำนวนรอบต่อวัน พร้อมแสดงปริมาตรน้ำใน Tooltip)
+            const canvas = document.getElementById('levelChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            if (charts['levelChart']) charts['levelChart'].destroy();
+
+            charts['levelChart'] = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: series.map(s => s.label),
+                    datasets: [
+                        {
+                            label: 'จำนวนรอบต่อวัน (ครั้ง)',
+                            data: series.map(s => s.rounds),
+                            backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                            borderColor: '#0D9488',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            maxBarThickness: 56
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Kanit', size: 12 },
+                            bodyFont: { family: 'Prompt', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (ctx) {
+                                    const rounds = Number(ctx.raw) || 0;
+                                    const liters = rounds * CONFIG.LITERS_PER_CYCLE;
+                                    return [
+                                        'จำนวนการทำงาน: ' + rounds.toLocaleString('th-TH') + ' ครั้ง (รอบ)',
+                                        'ปริมาตรน้ำที่ได้: ' + liters.toLocaleString('th-TH') + ' ลิตร'
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#E2E8F0' },
+                            ticks: {
+                                font: { family: 'Kanit', size: 11 },
+                                color: '#64748B',
+                                precision: 0,
+                                callback: function (val) {
+                                    return val + ' ครั้ง (' + (val * CONFIG.LITERS_PER_CYCLE) + ' L)';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Kanit', size: 11 }, color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+
         async function autoConnectSharedMachine() {
             let targetMachine = localStorage.getItem('currentMachine') || '';
             try {
@@ -1118,8 +1150,8 @@
             isLoginMode = (mode === 'login');
             const active = 'pb-3 pr-6 text-sm font-bold border-b-2 border-sky-600 text-sky-700 transition-all';
             const inactive = 'pb-3 px-6 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-700 transition-all';
-            document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่ระบบควบคุม' : 'สมัครสมาชิกผู้ใช้งานใหม่';
-            document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่แผงควบคุมระบบ' : 'ยืนยันการสมัครสมาชิก';
+            document.getElementById('authTitle').innerText = isLoginMode ? 'เข้าสู่หน้าแสดงผลข้อมูล' : 'สมัครสมาชิกผู้ใช้งานใหม่';
+            document.getElementById('authSubmitText').innerText = isLoginMode ? 'เข้าสู่หน้าจอแสดงผล' : 'ยืนยันการสมัครสมาชิก';
             document.getElementById('authUsernameLabel').innerText = isLoginMode ? 'ชื่อผู้ใช้งาน (Username)' : 'ตั้งชื่อผู้ใช้งานใหม่ (New Username)';
             document.getElementById('tabLogin').className = isLoginMode ? active : inactive;
             document.getElementById('tabRegister').className = isLoginMode ? inactive : active;
@@ -1132,7 +1164,7 @@
             btn.disabled = loading;
             btn.classList.toggle('opacity-70', loading);
             btn.classList.toggle('cursor-wait', loading);
-            label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่แผงควบคุมระบบ' : 'ยืนยันการสมัครสมาชิก');
+            label.innerText = loading ? text : (isLoginMode ? 'เข้าสู่หน้าจอแสดงผล' : 'ยืนยันการสมัครสมาชิก');
         }
 
         function completeLogin(userId, username) {
@@ -1224,33 +1256,24 @@
         }
 
         function resetDashboard() {
-            ['tempCurrent', 'phCurrent', 'levelCurrent'].forEach(id => {
+            ['tempCurrent', 'phCurrent', 'cycleCountCurrent', 'volumeCurrent'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerText = '--';
             });
-            const unitEl = document.getElementById('levelUnit');
-            if (unitEl) unitEl.innerText = '%';
-            ['tempStatus', 'phStatus', 'levelStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
-            ['tempGaugeArc', 'phGaugeArc', 'levelGaugeArc'].forEach(id => {
+            ['tempStatus', 'phStatus'].forEach(id => updateBadge(id, evaluateStatus('', null)));
+            ['tempGaugeArc', 'phGaugeArc'].forEach(id => {
                 const arc = document.getElementById(id);
                 if (arc) arc.style.strokeDashoffset = '144.5';
             });
-            ['tempBarFill', 'phBarFill', 'levelBarFill'].forEach(id => {
+            ['tempBarFill', 'phBarFill', 'cycleBarFill'].forEach(id => {
                 const bar = document.getElementById(id);
                 if (bar) bar.style.width = '0%';
             });
-            DEVICES.forEach(d => {
-                const el = document.getElementById(d.id);
-                if (el) el.checked = false;
-                updateDeviceIndicator(d, false);
-                delete knownSwitchState[d.id];
-            });
-            updateActiveEquipmentBanner();
             Object.values(charts).forEach(c => c.destroy());
             charts = {};
             lastHistoryRecords = [];
-            lastServerData = null;
-            hasInitialSwitchSync = false;
+            allHistoryRecords = [];
+            currentEcCycles = null;
             const lu = document.getElementById('lastUpdated');
             if (lu) lu.innerText = 'ยังไม่ได้เชื่อมต่อเครื่อง';
         }
@@ -1273,7 +1296,7 @@
             const badge = document.getElementById('connectionBadge');
             badge.innerText = 'กำลังเชื่อมต่อ ' + currentMachine + '...';
             badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-amber-50 text-amber-700 border border-amber-200 inline-block';
-            if (!silent) showToast('กำลังซิงค์ข้อมูลจาก ' + currentMachine + '...', 'info');
+            if (!silent) showToast('กำลังดึงข้อมูลจาก ' + currentMachine + '...', 'info');
             fetchCurrentData();
             fetchHistory();
             pollTimer = setInterval(fetchCurrentData, CONFIG.POLL_INTERVAL_MS);
@@ -1330,20 +1353,6 @@
             const danger = { text: 'เกินเกณฑ์วิกฤต', badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200 font-semibold' };
             const risky = { text: 'เฝ้าระวัง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
             const safe = { text: 'ปกติ', badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold' };
-            if (type === 'level') {
-                const rawStr = String(value).trim();
-                const num = parseFloat(rawStr);
-                if (isNaN(num)) {
-                    if (rawStr.includes('ต่ำ') || rawStr.toLowerCase().includes('low')) return { text: 'ระดับน้ำต่ำ', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
-                    if (rawStr.includes('สูง') || rawStr.includes('ล้น') || rawStr.toLowerCase().includes('high')) return { text: 'ระดับน้ำสูง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
-                    return safe;
-                }
-                const lowTh = (CONFIG.THRESHOLDS.level && CONFIG.THRESHOLDS.level.low) || 20;
-                const highTh = (CONFIG.THRESHOLDS.level && CONFIG.THRESHOLDS.level.high) || 95;
-                if (num < lowTh) return { text: 'ระดับน้ำต่ำ', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
-                if (num > highTh) return { text: 'ระดับน้ำสูง', badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold' };
-                return safe;
-            }
             const num = parseFloat(value);
             if (isNaN(num)) return none;
             const th = CONFIG.THRESHOLDS;
@@ -1378,46 +1387,22 @@
             if (bar) bar.style.width = pct.toFixed(1) + '%';
         }
 
-        function updateWaterLevelCard(rawLevel) {
-            const valEl = document.getElementById('levelCurrent');
-            const unitEl = document.getElementById('levelUnit');
-            if (!valEl) return;
-            if (rawLevel === null || rawLevel === undefined || String(rawLevel).trim() === '') {
-                valEl.innerText = '--';
-                if (unitEl) unitEl.innerText = '%';
-                updateBadge('levelStatus', evaluateStatus('level', null));
-                updateGaugeAndBar('levelGaugeArc', 'levelBarFill', null, 100);
-                return;
-            }
-            const str = String(rawLevel).trim();
-            const num = parseFloat(str);
-            if (!isNaN(num) && /^-?\d+(\.\d+)?%?$/.test(str)) {
-                valEl.innerText = Number.isInteger(num) ? String(num) : num.toFixed(1);
-                if (unitEl) unitEl.innerText = '%';
-                updateGaugeAndBar('levelGaugeArc', 'levelBarFill', num, 100);
-            } else {
-                valEl.innerText = str;
-                if (unitEl) unitEl.innerText = '';
-                updateGaugeAndBar('levelGaugeArc', 'levelBarFill', !isNaN(num) ? num : 75, 100);
-            }
-            updateBadge('levelStatus', evaluateStatus('level', rawLevel));
-        }
-
         function updateOverallWaterStatus(data) {
             const el = document.getElementById('overallWaterStatus');
             if (!el) return;
-            const tempStat = evaluateStatus('temp', data.current_temp).text;
-            const phStat = evaluateStatus('ph', data.current_ph).text;
-            const levelStat = evaluateStatus('level', extractWaterLevel(data)).text;
-            const statuses = [tempStat, phStat, levelStat];
+            const tempVal = data.current_temp ?? data.temp;
+            const phVal = data.current_ph ?? data.ph;
+            const tempStat = evaluateStatus('temp', tempVal).text;
+            const phStat = evaluateStatus('ph', phVal).text;
+            const statuses = [tempStat, phStat];
             if (statuses.includes('เกินเกณฑ์วิกฤต')) {
-                el.innerText = 'ภาพรวมคุณภาพน้ำ: เกินเกณฑ์วิกฤต (ควรเดินเครื่องบำบัด)';
+                el.innerText = 'ภาพรวมคุณภาพน้ำ: เกินเกณฑ์วิกฤต';
                 el.className = 'px-3.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-xs';
-            } else if (statuses.includes('เฝ้าระวัง') || statuses.includes('ระดับน้ำต่ำ') || statuses.includes('ระดับน้ำสูง')) {
+            } else if (statuses.includes('เฝ้าระวัง')) {
                 el.innerText = 'ภาพรวมคุณภาพน้ำ: มีค่าอยู่ในเกณฑ์เฝ้าระวัง';
                 el.className = 'px-3.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-semibold text-xs';
             } else if (statuses.every(s => s === 'ปกติ')) {
-                el.innerText = 'ภาพรวมคุณภาพน้ำ: อยู่ในเกณฑ์ปกติทุกพารามิเตอร์';
+                el.innerText = 'ภาพรวมคุณภาพน้ำ: อยู่ในเกณฑ์ปกติ (Temp & pH)';
                 el.className = 'px-3.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-xs';
             } else {
                 el.innerText = 'ภาพรวมคุณภาพน้ำ: กำลังรับข้อมูลจากเซนเซอร์';
@@ -1441,224 +1426,28 @@
                     }
                     return;
                 }
-                if (data.valve_command === undefined || data.valve_command === null || data.valve_command === '') {
-                    data.valve_command = getLocalValveFallback(currentMachine);
-                } else {
-                    setLocalValveFallback(currentMachine, data.valve_command);
-                }
-                lastServerData = data;
                 badge.innerText = 'ออนไลน์: ' + currentMachine;
                 badge.className = 'px-3 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block';
-                document.getElementById('tempCurrent').innerText = formatNumber(data.current_temp);
-                document.getElementById('phCurrent').innerText = formatNumber(data.current_ph);
-                updateBadge('tempStatus', evaluateStatus('temp', data.current_temp));
-                updateBadge('phStatus', evaluateStatus('ph', data.current_ph));
-                updateGaugeAndBar('tempGaugeArc', 'tempBarFill', data.current_temp, 50);
-                updateGaugeAndBar('phGaugeArc', 'phBarFill', data.current_ph, 14);
-                updateWaterLevelCard(extractWaterLevel(data));
+                const tempVal = data.current_temp ?? data.temp;
+                const phVal = data.current_ph ?? data.ph;
+                const ecCycleVal = data.current_ec ?? data.ec ?? 0;
+
+                document.getElementById('tempCurrent').innerText = formatNumber(tempVal);
+                document.getElementById('phCurrent').innerText = formatNumber(phVal);
+                updateBadge('tempStatus', evaluateStatus('temp', tempVal));
+                updateBadge('phStatus', evaluateStatus('ph', phVal));
+                updateGaugeAndBar('tempGaugeArc', 'tempBarFill', tempVal, 50);
+                updateGaugeAndBar('phGaugeArc', 'phBarFill', phVal, 14);
                 updateOverallWaterStatus(data);
-                syncSwitchesWithServer(data);
+
+                // แสดงจำนวนครั้งจากช่อง ec และคำนวณปริมาตรน้ำ (จำนวนครั้ง * 100 ลิตร)
+                updateCycleAndVolumeCard(ecCycleVal);
+
                 const lu = document.getElementById('lastUpdated');
                 if (lu) lu.innerText = 'ซิงค์ล่าสุด ' + new Date().toLocaleTimeString('th-TH', { hour12: false });
             } catch (err) {
                 const lu = document.getElementById('lastUpdated');
                 if (lu) lu.innerText = 'กำลังซิงค์ข้อมูลใหม่...';
-            }
-        }
-
-        function updateDeviceIndicator(dev, isOn) {
-            const led = document.getElementById(dev.ledId);
-            const txt = document.getElementById(dev.textId);
-            const card = dev.cardId ? document.getElementById(dev.cardId) : null;
-            const isSky = dev.activeTheme === 'sky';
-            if (led) led.className = isOn ? 'led-dot led-online' : 'led-dot led-standby';
-            if (txt) {
-                txt.innerText = isOn ? (dev.onLabel || 'กำลังทำงาน (ON)') : (dev.offLabel || 'หยุดพัก (OFF)');
-                txt.className = isOn ? (isSky ? 'text-xs font-bold text-sky-700' : 'text-xs font-bold text-emerald-600') : 'text-xs font-semibold text-slate-500';
-            }
-            if (card) {
-                if (isOn) {
-                    card.className = isSky
-                        ? 'border-2 border-sky-400 rounded-xl p-4 flex flex-col justify-between gap-4 bg-sky-50/40 shadow-sm transition-all duration-200'
-                        : 'border-2 border-emerald-400 rounded-xl p-4 flex flex-col justify-between gap-4 bg-emerald-50/40 shadow-sm transition-all duration-200';
-                } else {
-                    card.className = 'border-2 border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4 bg-slate-50/50 transition-all duration-200';
-                }
-            }
-        }
-
-        function updateActiveEquipmentBanner() {
-            const banner = document.getElementById('activeEquipmentBanner');
-            const dot = document.getElementById('activeEquipmentDot');
-            const listEl = document.getElementById('activeEquipmentList');
-            if (!banner || !listEl || !dot) return;
-            const activeItems = [];
-            DEVICES.forEach(dev => {
-                const el = document.getElementById(dev.id);
-                if (el && el.checked) {
-                    activeItems.push({ name: dev.name, label: dev.onLabel || 'เปิดทำงาน (ON)', theme: dev.activeTheme });
-                }
-            });
-            if (activeItems.length > 0) {
-                banner.className = 'mb-5 px-4 py-3 rounded-xl border border-emerald-300 bg-emerald-50/80 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
-                dot.className = 'led-dot led-online';
-                listEl.innerHTML = activeItems.map(item => {
-                    const pillClass = item.theme === 'sky' ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white';
-                    return '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ' + pillClass + ' font-semibold mr-1.5">' + escapeHtml(item.name) + ': ' + escapeHtml(item.label) + '</span>';
-                }).join('');
-            } else {
-                banner.className = 'mb-5 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs transition-all';
-                dot.className = 'led-dot led-standby';
-                listEl.innerText = 'ไม่มีอุปกรณ์กำลังทำงาน (หยุดพักทั้งหมด)';
-            }
-        }
-
-        function applySwitchMap(data, fromBroadcast = false) {
-            const now = Date.now();
-            const changedRemote = [];
-            DEVICES.forEach(dev => {
-                if (!fromBroadcast && switchLocks[dev.id] && now - switchLocks[dev.id] < CONFIG.SWITCH_LOCK_MS) return;
-                const el = document.getElementById(dev.id);
-                if (el && data[dev.field] !== undefined) {
-                    const isOn = isDeviceOnValue(dev, data[dev.field]);
-                    const prev = knownSwitchState[dev.id];
-                    if (hasInitialSwitchSync && prev !== undefined && prev !== isOn) {
-                        changedRemote.push(dev.name + ': ' + (isOn ? (dev.onLabel || 'เปิดทำงาน (ON)') : (dev.offLabel || 'หยุดพัก (OFF)')));
-                    }
-                    knownSwitchState[dev.id] = isOn;
-                    el.checked = isOn;
-                    updateDeviceIndicator(dev, isOn);
-                }
-            });
-            // บังคับ Interlock บนหน้าจอเสมอ: ถ้ามอเตอร์ (ช่อง 1 / motor1) และแผ่นอะลูมิเนียม (ช่อง 3 / pump1) เปิดคู่กัน ให้ปิดแผ่นอะลูมิเนียม
-            const m1El = document.getElementById('motor1Toggle');
-            const p1El = document.getElementById('pump1Toggle');
-            if (m1El && p1El && m1El.checked && p1El.checked) {
-                const p1Dev = DEVICES.find(d => d.code === '3');
-                p1El.checked = false;
-                knownSwitchState['pump1Toggle'] = false;
-                if (p1Dev) updateDeviceIndicator(p1Dev, false);
-            }
-            hasInitialSwitchSync = true;
-            updateActiveEquipmentBanner();
-            if (changedRemote.length > 0) {
-                showToast('ซิงค์สถานะสวิตช์: ' + changedRemote.join(' | '), 'info');
-            }
-        }
-
-        function syncSwitchesWithServer(data) {
-            applySwitchMap(data, false);
-        }
-
-        async function toggleDevice(elementId, onCommandCode) {
-            const checkbox = document.getElementById(elementId);
-            const dev = DEVICES.find(d => d.id === elementId);
-            if (!currentMachine) {
-                await autoConnectSharedMachine();
-                if (!currentMachine) {
-                    checkbox.checked = !checkbox.checked;
-                    showToast('กรุณาเชื่อมต่อเครื่องก่อนสั่งงานอุปกรณ์', 'error');
-                    return;
-                }
-            }
-            const isOn = checkbox.checked;
-            const targetCmd = isOn ? dev.onCmd : dev.offCmd;
-            const partnerCode = EXCLUSIVE_PAIRS[onCommandCode];
-            const partnerDev = partnerCode ? DEVICES.find(d => d.code === partnerCode) : null;
-            const partnerEl = partnerDev ? document.getElementById(partnerDev.id) : null;
-            let partnerWasOn = false;
-            if (isOn && partnerDev && partnerEl) {
-                partnerWasOn = partnerEl.checked || (lastServerData && isDeviceOnValue(partnerDev, lastServerData[partnerDev.field]));
-                partnerEl.checked = false;
-                partnerEl.disabled = true;
-                knownSwitchState[partnerDev.id] = false;
-                updateDeviceIndicator(partnerDev, false);
-                switchLocks[partnerDev.id] = Date.now();
-            }
-
-            // ป้องกันกรณี Google Apps Script ตัวเก่ายังผูก Interlock ระหว่างช่อง 1 (motor1) กับช่อง 4 (pump2 / วาล์ว):
-            // เก็บสถานะของช่อง 1 และช่อง 4 ไว้เพื่อคงค่าเดิมไม่ให้ถูกปิดเองโดยไม่ได้ตั้งใจ
-            const m1El = document.getElementById('motor1Toggle');
-            const vEl = document.getElementById('valveToggle');
-            const motor1ShouldStayOn = (onCommandCode === '4' && isOn && m1El && m1El.checked);
-            const valveShouldStayOn = (onCommandCode === '1' && isOn && vEl && vEl.checked);
-
-            switchLocks[elementId] = Date.now();
-            knownSwitchState[elementId] = isOn;
-            checkbox.disabled = true;
-            if (dev) updateDeviceIndicator(dev, isOn);
-            updateActiveEquipmentBanner();
-            if (syncChannel) {
-                const currentSwitchMap = {};
-                DEVICES.forEach(d => {
-                    const el = document.getElementById(d.id);
-                    currentSwitchMap[d.field] = (el && el.checked) ? d.onCmd : d.offCmd;
-                });
-                try { syncChannel.postMessage({ type: 'SWITCH_UPDATED', switches: currentSwitchMap }); } catch (_) {}
-            }
-            try {
-                // หากกดเปิดมอเตอร์ ('1') -> สั่งปิดแผ่นอะลูมิเนียม ('3' / pump1)
-                // หรือหากกดเปิดแผ่นอะลูมิเนียม ('3' / pump1) -> สั่งหยุดมอเตอร์ ('1' / motor1)
-                if (isOn && partnerDev) {
-                    await callApi('set_device_command', {
-                        machine_id: currentMachine,
-                        command: partnerDev.offCmd,
-                        device_type: partnerDev.code
-                    }, 'POST');
-                    if (lastServerData) lastServerData[partnerDev.field] = partnerDev.offCmd;
-                    switchLocks[partnerDev.id] = Date.now();
-                }
-
-                const result = await callApi('set_device_command', {
-                    machine_id: currentMachine,
-                    command: targetCmd,
-                    device_type: onCommandCode
-                }, 'POST');
-
-                // คงสถานะของวาล์ว (pump2) หรือมอเตอร์ (motor1) หากสคริปต์ฝั่งชีตตัวเก่าเผลอสลับค่า
-                if (motor1ShouldStayOn) {
-                    switchLocks['motor1Toggle'] = Date.now();
-                    await callApi('set_device_command', {
-                        machine_id: currentMachine,
-                        command: '0',
-                        device_type: '1'
-                    }, 'POST');
-                } else if (valveShouldStayOn) {
-                    switchLocks['valveToggle'] = Date.now();
-                    await callApi('set_device_command', {
-                        machine_id: currentMachine,
-                        command: '0',
-                        device_type: '4'
-                    }, 'POST');
-                }
-
-                if (result.status === 'success') {
-                    if (lastServerData && dev) lastServerData[dev.field] = targetCmd;
-                    switchLocks[elementId] = Date.now();
-                    const stateDesc = isOn ? (dev ? dev.onLabel : 'เปิดทำงาน (ON)') : (dev ? dev.offLabel : 'หยุดพัก (OFF)');
-                    if (isOn && partnerDev && partnerWasOn) {
-                        showToast((dev ? dev.name : 'อุปกรณ์') + ': ' + stateDesc + ' — หยุดการทำงานของ' + partnerDev.name + 'อัตโนมัติ', 'success');
-                    } else {
-                        showToast((dev ? dev.name : 'อุปกรณ์') + ': ' + stateDesc, 'success');
-                    }
-                } else {
-                    checkbox.checked = !isOn;
-                    knownSwitchState[elementId] = !isOn;
-                    if (dev) updateDeviceIndicator(dev, !isOn);
-                    updateActiveEquipmentBanner();
-                    delete switchLocks[elementId];
-                    showToast(result.message || 'ไม่สามารถส่งคำสั่งได้', 'error');
-                }
-            } catch (err) {
-                checkbox.checked = !isOn;
-                knownSwitchState[elementId] = !isOn;
-                if (dev) updateDeviceIndicator(dev, !isOn);
-                updateActiveEquipmentBanner();
-                delete switchLocks[elementId];
-                showToast('ส่งคำสั่งไม่สำเร็จ: ' + err.message, 'error');
-            } finally {
-                checkbox.disabled = false;
-                if (partnerEl) partnerEl.disabled = false;
             }
         }
 
@@ -1682,26 +1471,26 @@
             try {
                 const data = await callApi('get_history', { machine_id: machineAtRequest });
                 if (machineAtRequest !== currentMachine || !Array.isArray(data)) return;
-                const selectedDate = document.getElementById('datePicker').value || localDateKey(new Date());
-                const filtered = data.filter(d => d.recorded_at && localDateKey(d.recorded_at) === selectedDate).sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
+
+                allHistoryRecords = data;
+                renderDailyRoundsChartAndTable();
+
+                const todayKey = localDateKey(new Date());
+                const selectedDate = document.getElementById('datePicker').value || todayKey;
+                const filtered = data.filter(d => d.recorded_at && localDateKey(d.recorded_at) === selectedDate)
+                    .sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
                 lastHistoryRecords = filtered;
+
                 const countEl = document.getElementById('historyCount');
-                if (countEl) countEl.innerText = 'ข้อมูลที่บันทึก: ' + filtered.length + ' รายการ';
-                const currentLevelNumeric = lastServerData ? parseFloat(extractWaterLevel(lastServerData)) : NaN;
+                if (countEl) countEl.innerText = 'ข้อมูลที่บันทึกในวันที่เลือก: ' + filtered.length + ' รายการ';
+
                 const labels = filtered.map(d => new Date(d.recorded_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }));
                 const temps = filtered.map(d => d.temperature);
                 const phs = filtered.map(d => d.ph);
-                const levels = filtered.map(d => {
-                    const rawLv = d.water_level ?? d.level;
-                    if (rawLv !== undefined && rawLv !== null && rawLv !== '') return rawLv;
-                    return !isNaN(currentLevelNumeric) ? currentLevelNumeric : null;
-                });
                 updateStatsLabel('tempStats', temps, '°C');
                 updateStatsLabel('phStats', phs, 'pH');
-                updateStatsLabel('levelStats', levels, '%');
                 renderChart('tempChart', 'Temperature (°C)', labels, temps, '#F97316', 'rgba(249, 115, 22, 0.1)');
                 renderChart('phChart', 'pH Level', labels, phs, '#0284C7', 'rgba(2, 132, 199, 0.1)');
-                renderChart('levelChart', 'Water Level (%)', labels, levels, '#0D9488', 'rgba(13, 148, 136, 0.1)');
             } catch (err) {
                 console.warn('fetchHistory:', err);
             }
@@ -1712,20 +1501,29 @@
                 showToast('กรุณาเชื่อมต่อเครื่องก่อนส่งออกข้อมูล', 'error');
                 return;
             }
-            if (!lastHistoryRecords || lastHistoryRecords.length === 0) {
-                showToast('ไม่มีข้อมูลในวันที่เลือกสำหรับส่งออก', 'error');
+            const dailySeries = buildDailyRoundsSeries();
+            if ((!lastHistoryRecords || lastHistoryRecords.length === 0) && dailySeries.length === 0) {
+                showToast('ไม่มีข้อมูลสำหรับส่งออก', 'error');
                 return;
             }
             const selectedDate = document.getElementById('datePicker').value || localDateKey(new Date());
-            const fallbackLevel = lastServerData ? (extractWaterLevel(lastServerData) ?? '') : '';
-            const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'Water_Level_Pct'];
-            const rows = lastHistoryRecords.map(r => [
-                currentMachine,
-                new Date(r.recorded_at).toLocaleString('th-TH', { hour12: false }),
-                r.temperature,
-                r.ph,
-                r.water_level ?? r.level ?? fallbackLevel
-            ]);
+            const header = ['Machine_ID', 'Timestamp', 'Temperature_C', 'pH_Level', 'Cycles_Count_EC', 'Water_Volume_Liters'];
+            const rows = (lastHistoryRecords.length > 0 ? lastHistoryRecords : [{
+                recorded_at: new Date().toISOString(),
+                temperature: document.getElementById('tempCurrent').innerText,
+                ph: document.getElementById('phCurrent').innerText,
+                ec: currentEcCycles ?? 0
+            }]).map(r => {
+                const c = parseCycleCount(r.ec ?? currentEcCycles ?? 0) || 0;
+                return [
+                    currentMachine,
+                    new Date(r.recorded_at).toLocaleString('th-TH', { hour12: false }),
+                    r.temperature,
+                    r.ph,
+                    c,
+                    c * CONFIG.LITERS_PER_CYCLE
+                ];
+            });
             const csvContent = '\uFEFF' + [header, ...rows].map(e => e.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -1736,7 +1534,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast('ส่งออกไฟล์ CSV สำเร็จ (' + lastHistoryRecords.length + ' รายการ)', 'success');
+            showToast('ส่งออกไฟล์ CSV สำเร็จ', 'success');
         }
 
         function renderChart(canvasId, label, labels, dataPoints, borderColor, bgColor) {
@@ -1780,7 +1578,7 @@
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8', maxTicksLimit: 12 }
+                            ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8', maxTicksLimit: 10 }
                         }
                     }
                 }

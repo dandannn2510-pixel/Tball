@@ -67,8 +67,7 @@ function doPost(e) {
        if(stateData[i][0] == machineId) { isExist = true; break; }
     }
     if(!isExist) {
-       // แถวเริ่มต้น: machineId, temp, ph, ec, motor1(มอเตอร์), motor2(ปั๊มน้ำ), pump1(แผ่นอะลูมิเนียม), pump2(วาล์วน้ำไฟฟ้า), date, waterLevel(ระดับน้ำ)
-       sheetState.appendRow([machineId, 0, 0, 0, '1', '2', '3', '4', new Date(), 0]);
+       sheetState.appendRow([machineId, 0, 0, 0, '1', '2', '3', '4', new Date()]);
     }
     
     return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
@@ -76,19 +75,18 @@ function doPost(e) {
 
   // ==========================================
   // ส่วนระบบรับข้อมูลจาก Hardware (ESP32/Arduino)
+  // โดยช่อง ec เก็บค่าจำนวนรอบ (ครั้ง)
   // ==========================================
   if (action === 'hardware_sync') {
     const sheetState = SpreadsheetApp.openById(SHEET_ID).getSheetByName('MachineState');
     const machineId = e.parameter.machine_id;
     const temp = e.parameter.temperature || 0;
     const ph = e.parameter.ph || 0;
-    const ec = e.parameter.ec || 0;
-    const waterLevel = e.parameter.water_level ?? e.parameter.level ?? null;
+    const ec = e.parameter.ec || 0; // เก็บค่าจำนวนรอบ (ครั้ง)
     const now = new Date();
 
     let data = sheetState.getDataRange().getValues();
     let rowIndex = -1;
-    let m1 = '1', m2 = '2', p1 = '3', p2 = '4';
 
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] == machineId) { 
@@ -98,81 +96,26 @@ function doPost(e) {
     }
 
     if (rowIndex > -1) {
-      // อัปเดตค่า Sensor (Col B, C, D) และเวลาล่าสุด (Col I)
       sheetState.getRange(rowIndex, 2, 1, 3).setValues([[temp, ph, ec]]);
-      if (waterLevel !== null) {
-        sheetState.getRange(rowIndex, 10).setValue(waterLevel);
-      }
       sheetState.getRange(rowIndex, 9).setValue(now);
-      
-      // ดึงสถานะคำสั่ง (Col 5=motor1, Col 6=motor2, Col 7=pump1(แผ่นอะลูมิเนียม), Col 8=pump2(วาล์วน้ำไฟฟ้า))
-      m1 = sheetState.getRange(rowIndex, 5).getValue().toString();
-      m2 = sheetState.getRange(rowIndex, 6).getValue().toString();
-      p1 = sheetState.getRange(rowIndex, 7).getValue().toString();
-      p2 = sheetState.getRange(rowIndex, 8).getValue().toString();
     } else {
-      sheetState.appendRow([machineId, temp, ph, ec, '1', '2', '3', '4', now, waterLevel !== null ? waterLevel : 0]);
+      sheetState.appendRow([machineId, temp, ph, ec, '1', '2', '3', '4', now]);
     }
 
-    // บันทึก History
+    // บันทึก History (Col D = ec เก็บจำนวนรอบของวันนั้น)
     const sheetHistory = SpreadsheetApp.openById(SHEET_ID).getSheetByName('SensorHistory');
-    sheetHistory.appendRow([machineId, temp, ph, ec, now, waterLevel !== null ? waterLevel : 0]);
+    sheetHistory.appendRow([machineId, temp, ph, ec, now]);
 
-    // ส่ง JSON กลับไปให้บอร์ดไมโครคอนโทรลเลอร์
     return ContentService.createTextOutput(JSON.stringify({
-      status: "success", 
-      m1: m1, // ช่อง 1 มอเตอร์ ("1"=OFF หรือ "0"=ON)
-      m2: m2, // ช่อง 2 ปั๊มน้ำ ("2"=OFF หรือ "0"=ON)
-      p1: p1, // ช่อง 3 แผ่นอะลูมิเนียม - pump1 ("3"=OFF หรือ "0"=ON)
-      p2: p2  // ช่อง 4 วาล์วน้ำไฟฟ้า - pump2 ("4"=OFF หรือ "0"=ON)
+      status: "success"
     })).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // ==========================================
-  // ส่วนระบบสั่งสวิตช์จากหน้าเว็บ (ช่อง 1, 2, 3, 4)
-  // ==========================================
-  if (action === 'set_device_command') {
-    const machineId = e.parameter.machine_id;
-    const command = e.parameter.command;       // "1", "2", "3", "4" หรือ "0"
-    const deviceType = e.parameter.device_type; // "1" (มอเตอร์), "2" (ปั๊มน้ำ), "3" (แผ่นอะลูมิเนียม -> pump1), "4" (วาล์วน้ำไฟฟ้า -> pump2)
-    
-    // กำหนด Column ปลายทาง: 1->Col 5 (E: motor1), 2->Col 6 (F: motor2), 3->Col 7 (G: pump1), 4->Col 8 (H: pump2)
-    let colMap = { "1": 5, "2": 6, "3": 7, "4": 8 };
-    let targetCol = colMap[deviceType];
-
-    if (!targetCol) {
-      return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Invalid device_type"})).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    return updateCommand(machineId, targetCol, command);
   }
 
   return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Invalid POST action"})).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ฟังก์ชันอัปเดตค่าลงคอลัมน์คำสั่ง
-function updateCommand(machineId, colIndex, command) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('MachineState');
-  let data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] == machineId) {
-      // Interlock (Active-Low: '0' = เปิดทำงาน, '1'/'3' = ปิดทำงาน):
-      // ถ้าเปิดช่อง 1 มอเตอร์ (Col 5 เป็น '0') -> ให้ปิดแผ่นอะลูมิเนียม pump1 (Col 7 เป็น '3')
-      // ถ้าเปิดช่อง 3 แผ่นอะลูมิเนียม pump1 (Col 7 เป็น '0') -> ให้หยุดมอเตอร์ motor1 (Col 5 เป็น '1')
-      if (colIndex === 5 && String(command) === '0') {
-        sheet.getRange(i + 1, 7).setValue('3');
-      } else if (colIndex === 7 && String(command) === '0') {
-        sheet.getRange(i + 1, 5).setValue('1');
-      }
-      sheet.getRange(i + 1, colIndex).setValue(command);
-      return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-  return ContentService.createTextOutput(JSON.stringify({status: "error", message: "Machine not found"})).setMimeType(ContentService.MimeType.JSON);
-}
-
 // =========================================
-// ฟังก์ชันจัดการคนเข้าเว็บและดึงข้อมูลให้กราฟ (GET)
+// ฟังก์ชันดึงข้อมูลแสดงผลและจำนวนรอบรายวัน (GET)
 // =========================================
 function doGet(e) {
   const action = (e && e.parameter) ? e.parameter.action : null;
@@ -181,7 +124,7 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify({status: "ok"})).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // ส่งข้อมูลเซนเซอร์ (อุณหภูมิ, pH, ระดับน้ำ) และสถานะสวิตช์ทั้ง 4 ช่องให้หน้าเว็บ
+  // ส่งข้อมูลเซนเซอร์ (temp, ph) และจำนวนรอบจากช่อง current_ec ให้หน้าเว็บ
   if (action === 'get_current') {
     const sheetState = SpreadsheetApp.openById(SHEET_ID).getSheetByName('MachineState');
     let data = sheetState.getDataRange().getValues();
@@ -190,12 +133,7 @@ function doGet(e) {
         return ContentService.createTextOutput(JSON.stringify({
           current_temp: data[i][1],
           current_ph: data[i][2],
-          current_ec: data[i][3],
-          motor1_command: data[i][4],
-          motor2_command: data[i][5],
-          pump1_command: data[i][6],
-          pump2_command: data[i][7],
-          current_water_level: data[i][9] !== undefined && data[i][9] !== '' ? data[i][9] : data[i][3]
+          current_ec: data[i][3] // ช่อง ec เก็บค่าจำนวนรอบ (ครั้งต่อวัน)
         })).setMimeType(ContentService.MimeType.JSON);
       }
     }
@@ -211,9 +149,8 @@ function doGet(e) {
         result.push({
           temperature: data[i][1],
           ph: data[i][2],
-          ec: data[i][3],
-          recorded_at: data[i][4],
-          water_level: data[i][5] !== undefined ? data[i][5] : null
+          ec: data[i][3], // ช่อง ec เก็บค่าจำนวนรอบในแต่ละวัน
+          recorded_at: data[i][4]
         });
       }
     }
