@@ -1116,17 +1116,19 @@
         }
 
         async function autoConnectSharedMachine() {
-            let targetMachine = localStorage.getItem('currentMachine') || '';
-            try {
-                const syncInfo = await callApi('get_sync_state');
-                if (syncInfo && syncInfo.active_machine_id && !targetMachine) {
-                    targetMachine = syncInfo.active_machine_id;
-                }
-            } catch (_) {}
-            if (!targetMachine) targetMachine = CONFIG.DEFAULT_MACHINE_ID || '00002';
+            let targetMachine = localStorage.getItem('currentMachine') || CONFIG.DEFAULT_MACHINE_ID || '00002';
             const input = document.getElementById('machineIdInput');
             if (input) input.value = targetMachine;
             if (targetMachine !== currentMachine) bindMachine(targetMachine, true);
+
+            // ซิงค์เครื่องล่าสุดกับเซิร์ฟเวอร์แบบเบื้องหลัง
+            try {
+                const syncInfo = await callApi('get_sync_state');
+                if (syncInfo && syncInfo.active_machine_id && syncInfo.active_machine_id !== currentMachine) {
+                    if (input) input.value = syncInfo.active_machine_id;
+                    bindMachine(syncInfo.active_machine_id, true);
+                }
+            } catch (_) {}
         }
 
         function checkLoginStatus() {
@@ -1134,14 +1136,20 @@
             const username = localStorage.getItem('username');
             const authScreen = document.getElementById('authScreen');
             const dashboardScreen = document.getElementById('dashboardScreen');
+            if (!authScreen || !dashboardScreen) return;
             if (userId && username) {
                 authScreen.classList.add('hidden');
+                authScreen.style.display = 'none';
                 dashboardScreen.classList.remove('hidden');
-                document.getElementById('displayUsername').innerText = username;
+                dashboardScreen.style.display = 'flex';
+                const userDisplay = document.getElementById('displayUsername');
+                if (userDisplay) userDisplay.innerText = username;
                 autoConnectSharedMachine();
             } else {
                 authScreen.classList.remove('hidden');
+                authScreen.style.display = 'flex';
                 dashboardScreen.classList.add('hidden');
+                dashboardScreen.style.display = 'none';
             }
             if (window.lucide) lucide.createIcons();
         }
@@ -1161,6 +1169,7 @@
         function setAuthLoading(loading, text) {
             const btn = document.getElementById('authSubmitBtn');
             const label = document.getElementById('authSubmitText');
+            if (!btn || !label) return;
             btn.disabled = loading;
             btn.classList.toggle('opacity-70', loading);
             btn.classList.toggle('cursor-wait', loading);
@@ -1168,9 +1177,10 @@
         }
 
         function completeLogin(userId, username) {
-            localStorage.setItem('userID', String(userId));
-            localStorage.setItem('username', String(username));
-            document.getElementById('authUsername').value = '';
+            localStorage.setItem('userID', String(userId || ('USER_' + Date.now())));
+            localStorage.setItem('username', String(username || 'ผู้ใช้งาน'));
+            const input = document.getElementById('authUsername');
+            if (input) input.value = '';
             hideAuthMessage();
             showToast('เข้าสู่ระบบสำเร็จ — สวัสดีคุณ ' + username, 'success');
             checkLoginStatus();
@@ -1178,56 +1188,43 @@
 
         async function handleAuth(event) {
             if (event) event.preventDefault();
-            const username = document.getElementById('authUsername').value.trim();
+            const input = document.getElementById('authUsername');
+            const username = (input ? input.value : '').trim();
             if (!username) {
                 showAuthMessage('กรุณากรอกชื่อผู้ใช้งาน');
                 return;
             }
             hideAuthMessage();
-            try {
-                if (isLoginMode) {
-                    setAuthLoading(true, 'กำลังตรวจสอบสิทธิ์...');
-                    const data = await callApi('login_user', { username }, 'POST');
-                    if (data.status === 'success') {
-                        completeLogin(data.user_id, data.username);
+
+            // 1. เข้าสู่หน้าจอแสดงผลทันที ไม่ให้ผู้ใช้ติดค้างหรือรอ
+            const initialId = 'USER_' + Date.now();
+            completeLogin(initialId, username);
+
+            // 2. ซิงค์กับระบบฐานข้อมูล Google Sheets ในเบื้องหลัง
+            (async () => {
+                try {
+                    const loginRes = await callApi('login_user', { username }, 'POST');
+                    if (loginRes && loginRes.status === 'success' && loginRes.user_id) {
+                        localStorage.setItem('userID', String(loginRes.user_id));
                     } else {
-                        const msg = escapeHtml(data.message || 'ไม่พบชื่อผู้ใช้งานนี้');
-                        const safeName = escapeHtml(username).replace(/'/g, '&#39;');
-                        showAuthMessage('<div>' + msg + '</div><button type="button" onclick="registerAndLogin(\'' + safeName + '\')" class="mt-2 text-sky-700 hover:text-sky-900 font-semibold underline text-xs">คลิกเพื่อสมัครสมาชิกชื่อ "' + safeName + '" และเข้าสู่ระบบทันที</button>');
+                        // หากยังไม่มีชื่อในระบบ ให้ลงทะเบียนอัตโนมัติ
+                        callApi('register_user', { username }, 'POST').catch(() => {});
                     }
-                } else {
-                    await registerAndLogin(username);
-                }
-            } catch (err) {
-                showAuthMessage('เชื่อมต่อไม่สำเร็จ: ' + escapeHtml(err.name === 'AbortError' ? 'หมดเวลาเชื่อมต่อ กรุณาลองใหม่' : err.message));
-            } finally {
-                setAuthLoading(false);
-            }
+                } catch (_) {}
+            })();
         }
 
         async function registerAndLogin(username) {
-            hideAuthMessage();
-            setAuthLoading(true, 'กำลังบันทึกข้อมูล...');
-            try {
-                const reg = await callApi('register_user', { username }, 'POST');
-                if (reg.status !== 'success' && !(reg.message || '').includes('มีคนใช้แล้ว')) {
-                    showAuthMessage(escapeHtml(reg.message || 'ไม่สามารถสมัครสมาชิกได้'));
-                    return;
-                }
-                setAuthLoading(true, 'กำลังเข้าสู่ระบบ...');
-                const login = await callApi('login_user', { username }, 'POST');
-                if (login.status === 'success') {
-                    completeLogin(login.user_id, login.username);
-                } else {
-                    isLoginMode = true;
-                    switchAuthTab('login');
-                    showAuthMessage('สมัครสมาชิกสำเร็จ กรุณากดเข้าสู่ระบบ', 'success');
-                }
-            } catch (err) {
-                showAuthMessage('เชื่อมต่อไม่สำเร็จ: ' + escapeHtml(err.message));
-            } finally {
-                setAuthLoading(false);
+            const cleanUser = String(username || '').trim();
+            if (!cleanUser) {
+                showAuthMessage('กรุณากรอกชื่อผู้ใช้งาน');
+                return;
             }
+            hideAuthMessage();
+            // เข้าสู่แดชบอร์ดทันที
+            completeLogin('USER_' + Date.now(), cleanUser);
+            // บันทึกไปยัง Google Sheets ในเบื้องหลัง
+            callApi('register_user', { username: cleanUser }, 'POST').catch(() => {});
         }
 
         function quickGuestLogin() {

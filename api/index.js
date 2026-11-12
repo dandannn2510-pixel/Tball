@@ -6,11 +6,31 @@ const sharedState = {
 };
 
 function readRawBody(req) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const chunks = [];
+        let done = false;
+        const timer = setTimeout(() => {
+            if (!done) {
+                done = true;
+                resolve(Buffer.concat(chunks).toString('utf8'));
+            }
+        }, 1500);
+
         req.on('data', c => chunks.push(c));
-        req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-        req.on('error', reject);
+        req.on('end', () => {
+            if (!done) {
+                done = true;
+                clearTimeout(timer);
+                resolve(Buffer.concat(chunks).toString('utf8'));
+            }
+        });
+        req.on('error', () => {
+            if (!done) {
+                done = true;
+                clearTimeout(timer);
+                resolve('');
+            }
+        });
     });
 }
 
